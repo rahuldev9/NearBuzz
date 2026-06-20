@@ -1,8 +1,31 @@
 import dotenv from "dotenv";
 import nodemailer from "nodemailer";
 dotenv.config();
+
+const normalizeEnv = (value) =>
+  value?.trim().replace(/^['"]+|['"]+$/g, "") || "";
+
+const emailHost = normalizeEnv(process.env.EMAIL_HOST);
+const emailUser = normalizeEnv(process.env.EMAIL_USER);
+const emailPass = normalizeEnv(process.env.EMAIL_PASS).replace(/\s+/g, "");
+const emailPort = Number(normalizeEnv(process.env.EMAIL_PORT) || 587);
+const emailSecure = normalizeEnv(process.env.EMAIL_SECURE) === "true";
+const emailFrom = normalizeEnv(process.env.EMAIL_FROM) || emailUser;
+
 const useConsoleDelivery =
-  !process.env.EMAIL_HOST || !process.env.EMAIL_USER || !process.env.EMAIL_PASS;
+  process.env.NODE_ENV !== "production" &&
+  (!emailHost || !emailUser || !emailPass);
+
+const ensureProductionEmailConfig = () => {
+  if (
+    process.env.NODE_ENV === "production" &&
+    (!emailHost || !emailUser || !emailPass)
+  ) {
+    throw new Error(
+      "Missing production email SMTP configuration. Set EMAIL_HOST, EMAIL_USER, and EMAIL_PASS.",
+    );
+  }
+};
 
 export const sendOtpEmail = async (email, otp, purpose = "password-reset") => {
   const isRegistration = purpose === "registration";
@@ -21,18 +44,20 @@ export const sendOtpEmail = async (email, otp, purpose = "password-reset") => {
     };
   }
 
+  ensureProductionEmailConfig();
+
   const transporter = nodemailer.createTransport({
-    host: process.env.EMAIL_HOST,
-    port: Number(process.env.EMAIL_PORT) || 587,
-    secure: process.env.EMAIL_SECURE === "true",
+    host: emailHost,
+    port: emailPort,
+    secure: emailSecure,
     auth: {
-      user: process.env.EMAIL_USER,
-      pass: process.env.EMAIL_PASS,
+      user: emailUser,
+      pass: emailPass,
     },
   });
 
   return transporter.sendMail({
-    from: process.env.EMAIL_FROM || process.env.EMAIL_USER,
+    from: emailFrom,
     to: email,
     subject,
     text,
