@@ -8,16 +8,7 @@ import React, {
 } from "react";
 import { Platform } from "react-native";
 
-/* ===========================
-   API CONFIG
-=========================== */
-
-const API_HOST =
-  Platform.OS === "android"
-    ? "http://10.0.2.2:5000"
-    : "http://192.168.0.104:5000";
-
-const AUTH_API_URL = `${API_HOST}/api/auth`;
+import { AUTH_API_URL } from "@/config/api";
 
 /* ===========================
    STORAGE
