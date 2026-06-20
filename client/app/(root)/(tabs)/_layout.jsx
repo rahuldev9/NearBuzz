@@ -1,6 +1,6 @@
 import { MaterialIcons } from "@expo/vector-icons";
 import { Redirect, Tabs } from "expo-router";
-import { useAuth } from "../../context/AuthContext";
+import { useAuth } from "../../../context/AuthContext";
 
 export default function TabLayout() {
   const { isAuthenticated, isInitializing } = useAuth();
