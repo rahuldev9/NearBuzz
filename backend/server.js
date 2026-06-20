@@ -1,8 +1,9 @@
 import dotenv from "dotenv";
+import path from "path";
 import { fileURLToPath } from "url";
 
 const __filename = fileURLToPath(import.meta.url);
-const __dirname = __filename.replace(/\\[^\\]*$/, "");
+const __dirname = path.dirname(__filename);
 
 dotenv.config({ path: `${__dirname}/.env` });
 
@@ -11,6 +12,8 @@ import { connectDB } from "./src/config/db.js";
 
 connectDB();
 
-app.listen(process.env.PORT, "0.0.0.0", () => {
-  console.log(`Server running on port ${process.env.PORT}`);
+const port = process.env.PORT || 5000;
+
+app.listen(port, "0.0.0.0", () => {
+  console.log(`Server running on port ${port}`);
 });
