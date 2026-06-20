@@ -1,17 +1,8 @@
 import { router, useLocalSearchParams } from "expo-router";
 import React, { useState } from "react";
-import {
-  Alert,
-  Platform,
-  Text,
-  TextInput,
-  TouchableOpacity,
-} from "react-native";
+import { Alert, Text, TextInput, TouchableOpacity } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-
-const API_HOST =
-  Platform.OS === "android" ? "http://10.0.2.2:5000" : "http://localhost:5000";
-const AUTH_API_URL = `${API_HOST}/api/auth`;
+import { AUTH_API_URL } from "@/config/api";
 
 export default function OtpVerificationScreen() {
   const { email } = useLocalSearchParams();

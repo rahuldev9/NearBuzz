@@ -6,12 +6,13 @@ import morgan from "morgan";
 import authRoutes from "./src/routes/auth.routes.js";
 
 const app = express();
+const corsOrigin = process.env.CORS_ORIGIN || "*";
 
 app.use(helmet());
 
 app.use(
   cors({
-    origin: "*",
+    origin: corsOrigin,
   }),
 );
 
