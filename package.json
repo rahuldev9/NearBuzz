@@ -10,7 +10,8 @@
     "web": "expo start --web",
     "lint": "expo lint",
     "dev": "nodemon backend/server.js",
-    "backend:start": "node backend/server.js"
+    "backend:start": "node backend/server.js",
+    "build": "expo export --platform web"
   },
   "dependencies": {
     "@expo/vector-icons": "^15.0.3",
