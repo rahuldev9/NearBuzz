@@ -22,7 +22,7 @@ export default function HomeScreen() {
         <View className="px-5 pt-4">
           <Text className="text-3xl font-bold text-slate-900">NearBuzz 👋</Text>
           <Text className="text-slate-500 mt-1">
-            Discover what's happening around you
+            {"Discover what's happening around you"}
           </Text>
         </View>
 
@@ -83,7 +83,9 @@ export default function HomeScreen() {
               <Text className="font-semibold text-slate-900">
                 Trending Places
               </Text>
-              <Text className="text-slate-500">See what's popular today</Text>
+              <Text className="text-slate-500">
+                {"See what's popular today"}
+              </Text>
             </View>
           </TouchableOpacity>
 

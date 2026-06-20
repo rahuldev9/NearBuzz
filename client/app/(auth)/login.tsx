@@ -2,7 +2,7 @@ import { router } from "expo-router";
 import React, { useEffect, useState } from "react";
 import { Text, TextInput, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useAuth } from "../context/AuthContext";
+import { useAuth } from "../../context/AuthContext";
 
 export default function LoginScreen() {
   const [email, setEmail] = useState("");
@@ -108,7 +108,7 @@ export default function LoginScreen() {
         disabled={isLoading}
       >
         <Text className="text-center">
-          Don't have an account?{" "}
+          {"Don't have an account? "}
           <Text className="font-bold text-blue-600">Register</Text>
         </Text>
       </TouchableOpacity>
