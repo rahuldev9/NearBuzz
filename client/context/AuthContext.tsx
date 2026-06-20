@@ -9,6 +9,7 @@ import React, {
 import { Platform } from "react-native";
 
 import { AUTH_API_URL } from "@/config/api";
+import { KEY_ACCESS_TOKEN, KEY_REFRESH_TOKEN, KEY_USER } from "@/config/auth";
 
 /* ===========================
    STORAGE
@@ -46,9 +47,7 @@ const storage = {
    CONSTANTS
 =========================== */
 
-const KEY_USER = "NEARBUZZ_USER";
-const KEY_ACCESS_TOKEN = "NEARBUZZ_ACCESS_TOKEN";
-const KEY_REFRESH_TOKEN = "NEARBUZZ_REFRESH_TOKEN";
+// keys are loaded from env via client/config/auth.ts
 
 /* ===========================
    TYPES

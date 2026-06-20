@@ -4,7 +4,7 @@ import helmet from "helmet";
 import morgan from "morgan";
 
 import authRoutes from "./src/routes/auth.routes.js";
-
+import eventRoutes from "./src/routes/event.routes.js";
 const app = express();
 const corsOrigin = process.env.CORS_ORIGIN || "*";
 
@@ -21,6 +21,7 @@ app.use(express.json());
 app.use(morgan("dev"));
 
 app.use("/api/auth", authRoutes);
+app.use("/api/events", eventRoutes);
 app.get("/", (req, res) => {
   res.json({
     success: true,

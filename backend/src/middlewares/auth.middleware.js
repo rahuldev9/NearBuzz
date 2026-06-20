@@ -15,9 +15,19 @@ export const protect = async (req, res, next) => {
     req.user = decoded;
 
     next();
-  } catch {
+  } catch (error) {
+    console.log(error);
+
+    // Distinguish expired token from other JWT errors
+    if (error && error.name === "TokenExpiredError") {
+      return res.status(401).json({
+        message: "Token expired",
+        expiredAt: error.expiredAt,
+      });
+    }
+
     return res.status(401).json({
-      message: "Invalid Token",
+      message: "Invalid token",
     });
   }
 };

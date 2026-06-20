@@ -8,3 +8,4 @@ if (!apiUrl) {
 
 export const API_URL = trimTrailingSlash(apiUrl);
 export const AUTH_API_URL = `${API_URL}/api/auth`;
+export const EVENTS_API_URL = `${API_URL}/api/events`;
