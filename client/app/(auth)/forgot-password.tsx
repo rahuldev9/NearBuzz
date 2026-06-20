@@ -1,8 +1,8 @@
+import { AUTH_API_URL } from "@/config/api";
 import { router } from "expo-router";
 import React, { useState } from "react";
 import { Alert, Text, TextInput, TouchableOpacity } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { AUTH_API_URL } from "@/config/api";
 
 export default function ForgotPasswordScreen() {
   const [email, setEmail] = useState("");
@@ -46,7 +46,7 @@ export default function ForgotPasswordScreen() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-slate-50 justify-center px-6">
+    <SafeAreaView className="flex-1 bg-slate-50 justify-center px-6 m-2">
       <Text className="text-4xl font-bold">Reset Password</Text>
 
       <Text className="text-slate-500 mt-2 mb-8">Enter your email address</Text>

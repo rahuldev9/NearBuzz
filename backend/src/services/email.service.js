@@ -1,12 +1,17 @@
+import dotenv from "dotenv";
 import nodemailer from "nodemailer";
-
+dotenv.config();
 const useConsoleDelivery =
   !process.env.EMAIL_HOST || !process.env.EMAIL_USER || !process.env.EMAIL_PASS;
 
-export const sendOtpEmail = async (email, otp) => {
-  const subject = "Your NearBuzz Password Reset Code";
-  const text = `Your password reset code is ${otp}. It expires in 10 minutes.`;
-  const html = `<p>Your password reset code is <strong>${otp}</strong>.</p><p>This code will expire in 10 minutes.</p>`;
+export const sendOtpEmail = async (email, otp, purpose = "password-reset") => {
+  const isRegistration = purpose === "registration";
+  const subject = isRegistration
+    ? "Your NearBuzz Registration Code"
+    : "Your NearBuzz Password Reset Code";
+  const action = isRegistration ? "registration" : "password reset";
+  const text = `Your ${action} code is ${otp}. It expires in 10 minutes.`;
+  const html = `<p>Your ${action} code is <strong>${otp}</strong>.</p><p>This code will expire in 10 minutes.</p>`;
 
   if (useConsoleDelivery) {
     console.log("[OTP EMAIL]", { to: email, subject, text });

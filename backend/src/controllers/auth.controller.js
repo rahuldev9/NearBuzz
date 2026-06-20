@@ -17,13 +17,67 @@ const sanitizeUser = (user) => ({
 const generateOtp = () =>
   Math.floor(100000 + Math.random() * 900000).toString();
 
-export const register = async (req, res) => {
-  const { name, email, password } = req.body;
+const normalizeEmail = (email) => email.trim().toLowerCase();
+const normalizeUsername = (name) => name.trim().toLowerCase();
 
-  if (!name || !email || !password) {
+const isValidUsername = (name) =>
+  /^(?!.*\.\.)(?!\.)(?!.*\.$)[a-z0-9._]{3,30}$/.test(name);
+
+const usernameValidationMessage =
+  "Username must be 3-30 characters and can only use lowercase letters, numbers, periods, and underscores.";
+
+const validateUsername = (name) => {
+  const username = normalizeUsername(name);
+
+  if (!isValidUsername(username)) {
+    return { error: usernameValidationMessage };
+  }
+
+  return { username };
+};
+
+const createOtpToken = async (email, purpose) => {
+  const code = generateOtp();
+  const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
+  const normalizedEmail = normalizeEmail(email);
+
+  await OtpToken.findOneAndUpdate(
+    { email: normalizedEmail, purpose },
+    { email: normalizedEmail, code, purpose, expiresAt },
+    { upsert: true, new: true },
+  );
+
+  await sendOtpEmail(normalizedEmail, code, purpose);
+};
+
+const validateOtpToken = async (email, otp, purpose) => {
+  const record = await OtpToken.findOne({
+    email: normalizeEmail(email),
+    code: otp,
+    purpose,
+  });
+
+  if (!record || record.expiresAt < new Date()) {
+    return null;
+  }
+
+  return record;
+};
+
+export const sendRegistrationOtp = async (req, res) => {
+  const { name: rawName, email: rawEmail } = req.body;
+
+  if (!rawName || !rawEmail) {
     return res.status(400).json({ message: "All fields are required" });
   }
 
+  const { username, error: usernameError } = validateUsername(rawName);
+
+  if (usernameError) {
+    return res.status(400).json({ message: usernameError });
+  }
+
+  const email = normalizeEmail(rawEmail);
   const exists = await User.findOne({ email });
 
   if (exists) {
@@ -32,17 +86,104 @@ export const register = async (req, res) => {
     });
   }
 
+  const usernameExists = await User.findOne({ name: username });
+
+  if (usernameExists) {
+    return res.status(400).json({
+      message: "Username is already taken",
+    });
+  }
+
+  await createOtpToken(email, "registration");
+
+  res.json({ success: true, message: "OTP sent to email" });
+};
+
+export const verifyRegistrationOtp = async (req, res) => {
+  const { email: rawEmail, otp } = req.body;
+
+  if (!rawEmail || !otp) {
+    return res.status(400).json({ message: "Email and OTP are required" });
+  }
+
+  const email = normalizeEmail(rawEmail);
+  const record = await validateOtpToken(email, otp, "registration");
+
+  if (!record) {
+    return res.status(400).json({ message: "OTP is invalid or expired" });
+  }
+
+  res.json({ success: true, message: "Email verified" });
+};
+
+export const register = async (req, res) => {
+  const { name: rawName, email: rawEmail, password, otp } = req.body;
+
+  if (!rawName || !rawEmail || !password || !otp) {
+    return res
+      .status(400)
+      .json({ message: "Username, email, password and OTP are required" });
+  }
+
+  const { username, error: usernameError } = validateUsername(rawName);
+
+  if (usernameError) {
+    return res.status(400).json({ message: usernameError });
+  }
+
+  const email = normalizeEmail(rawEmail);
+  const exists = await User.findOne({ email });
+
+  if (exists) {
+    return res.status(400).json({
+      message: "Email already exists",
+    });
+  }
+
+  const usernameExists = await User.findOne({ name: username });
+
+  if (usernameExists) {
+    return res.status(400).json({
+      message: "Username is already taken",
+    });
+  }
+
+  const otpRecord = await validateOtpToken(email, otp, "registration");
+
+  if (!otpRecord) {
+    return res.status(400).json({ message: "OTP is invalid or expired" });
+  }
+
   const hashedPassword = await bcrypt.hash(password, 12);
 
-  const user = await User.create({
-    name,
-    email,
-    password: hashedPassword,
-  });
+  let user;
+
+  try {
+    user = await User.create({
+      name: username,
+      email,
+      password: hashedPassword,
+      isVerified: true,
+    });
+  } catch (error) {
+    if (error?.code === 11000) {
+      const duplicatedField = Object.keys(error.keyPattern || {})[0];
+      const message =
+        duplicatedField === "name"
+          ? "Username is already taken"
+          : "Email already exists";
+
+      return res.status(400).json({ message });
+    }
+
+    throw error;
+  }
 
   const sanitizedUser = sanitizeUser(user);
   const accessToken = generateAccessToken(user);
   const refreshToken = generateRefreshToken(user);
+
+  await OtpToken.deleteOne({ email, code: otp, purpose: "registration" });
 
   res.status(201).json({
     success: true,
@@ -53,12 +194,13 @@ export const register = async (req, res) => {
 };
 
 export const login = async (req, res) => {
-  const { email, password } = req.body;
+  const { email: rawEmail, password } = req.body;
 
-  if (!email || !password) {
+  if (!rawEmail || !password) {
     return res.status(400).json({ message: "Email and password are required" });
   }
 
+  const email = normalizeEmail(rawEmail);
   const user = await User.findOne({ email }).select("+password");
 
   if (!user) {
@@ -87,42 +229,35 @@ export const login = async (req, res) => {
 };
 
 export const sendOtp = async (req, res) => {
-  const { email } = req.body;
+  const { email: rawEmail } = req.body;
 
-  if (!email) {
+  if (!rawEmail) {
     return res.status(400).json({ message: "Email is required" });
   }
 
+  const email = normalizeEmail(rawEmail);
   const user = await User.findOne({ email });
 
   if (!user) {
     return res.status(404).json({ message: "Email not found" });
   }
 
-  const code = generateOtp();
-  const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
-
-  await OtpToken.findOneAndUpdate(
-    { email },
-    { code, expiresAt },
-    { upsert: true, new: true },
-  );
-
-  await sendOtpEmail(email, code);
+  await createOtpToken(email, "password-reset");
 
   res.json({ success: true, message: "OTP sent to email" });
 };
 
 export const verifyOtp = async (req, res) => {
-  const { email, otp } = req.body;
+  const { email: rawEmail, otp } = req.body;
 
-  if (!email || !otp) {
+  if (!rawEmail || !otp) {
     return res.status(400).json({ message: "Email and OTP are required" });
   }
 
-  const record = await OtpToken.findOne({ email, code: otp });
+  const email = normalizeEmail(rawEmail);
+  const record = await validateOtpToken(email, otp, "password-reset");
 
-  if (!record || record.expiresAt < new Date()) {
+  if (!record) {
     return res.status(400).json({ message: "OTP is invalid or expired" });
   }
 
@@ -130,17 +265,18 @@ export const verifyOtp = async (req, res) => {
 };
 
 export const resetPassword = async (req, res) => {
-  const { email, otp, password } = req.body;
+  const { email: rawEmail, otp, password } = req.body;
 
-  if (!email || !otp || !password) {
+  if (!rawEmail || !otp || !password) {
     return res
       .status(400)
       .json({ message: "Email, OTP and password are required" });
   }
 
-  const record = await OtpToken.findOne({ email, code: otp });
+  const email = normalizeEmail(rawEmail);
+  const record = await validateOtpToken(email, otp, "password-reset");
 
-  if (!record || record.expiresAt < new Date()) {
+  if (!record) {
     return res.status(400).json({ message: "OTP is invalid or expired" });
   }
 
@@ -152,7 +288,7 @@ export const resetPassword = async (req, res) => {
 
   user.password = await bcrypt.hash(password, 12);
   await user.save();
-  await OtpToken.deleteOne({ email, code: otp });
+  await OtpToken.deleteOne({ email, code: otp, purpose: "password-reset" });
 
   res.json({ success: true, message: "Password reset successfully" });
 };

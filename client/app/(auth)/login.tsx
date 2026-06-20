@@ -50,7 +50,7 @@ export default function LoginScreen() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-slate-50 justify-center px-6">
+    <SafeAreaView className="flex-1 bg-slate-50 justify-center px-6 m-2">
       <Text className="text-4xl font-bold text-slate-900">Welcome Back 👋</Text>
 
       <Text className="text-slate-500 mt-2 mb-8">Sign in to continue</Text>
