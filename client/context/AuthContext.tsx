@@ -61,8 +61,14 @@ export type AuthUser = {
   role: string;
 };
 
+type PendingRegistration = {
+  name: string;
+  email: string;
+};
+
 type AuthContextValue = {
   user: AuthUser | null;
+  pendingRegistration: PendingRegistration | null;
   isAuthenticated: boolean;
   isInitializing: boolean;
   isLoading: boolean;
@@ -71,6 +77,9 @@ type AuthContextValue = {
   signIn: (email: string, password: string) => Promise<void>;
 
   signUp: (name: string, email: string, password: string) => Promise<void>;
+  requestSignUpOtp: (name: string, email: string) => Promise<void>;
+  verifySignUpOtp: (otp: string) => Promise<void>;
+  confirmSignUp: (otp: string, password: string) => Promise<void>;
 
   signOut: () => Promise<void>;
 };
@@ -111,6 +120,8 @@ const clearAuthData = async () => {
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<AuthUser | null>(null);
+  const [pendingRegistration, setPendingRegistration] =
+    useState<PendingRegistration | null>(null);
 
   const [isInitializing, setIsInitializing] = useState(true);
 
@@ -184,7 +195,83 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
      REGISTER
   =========================== */
 
-  const signUp = async (name: string, email: string, password: string) => {
+  const requestSignUpOtp = async (name: string, email: string) => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      const username = name.trim().toLowerCase();
+
+      const response = await fetch(`${AUTH_API_URL}/register/send-otp`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          name: username,
+          email,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "Unable to send OTP");
+      }
+
+      setPendingRegistration({ name: username, email });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Unable to send OTP";
+
+      setError(message);
+
+      throw new Error(message);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const verifySignUpOtp = async (otp: string) => {
+    if (!pendingRegistration) {
+      throw new Error("Please start registration again.");
+    }
+
+    try {
+      setIsLoading(true);
+      setError(null);
+
+      const response = await fetch(`${AUTH_API_URL}/register/verify-otp`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email: pendingRegistration.email,
+          otp,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "Unable to verify email");
+      }
+    } catch (err) {
+      const message =
+        err instanceof Error ? err.message : "Email verification failed";
+
+      setError(message);
+
+      throw new Error(message);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const confirmSignUp = async (otp: string, password: string) => {
+    if (!pendingRegistration) {
+      throw new Error("Please start registration again.");
+    }
+
     try {
       setIsLoading(true);
       setError(null);
@@ -195,9 +282,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          name,
-          email,
+          ...pendingRegistration,
           password,
+          otp,
         }),
       });
 
@@ -210,6 +297,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       await saveAuthData(data.user, data.accessToken, data.refreshToken);
 
       setUser(data.user);
+      setPendingRegistration(null);
     } catch (err) {
       const message = err instanceof Error ? err.message : "Sign up failed";
 
@@ -219,6 +307,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const signUp = async (name: string, email: string, password: string) => {
+    await requestSignUpOtp(name, email);
   };
 
   /* ===========================
@@ -244,15 +336,19 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const value = useMemo(
     () => ({
       user,
+      pendingRegistration,
       isAuthenticated: !!user,
       isInitializing,
       isLoading,
       error,
       signIn,
       signUp,
+      requestSignUpOtp,
+      verifySignUpOtp,
+      confirmSignUp,
       signOut,
     }),
-    [user, isInitializing, isLoading, error],
+    [user, pendingRegistration, isInitializing, isLoading, error],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
