@@ -92,3 +92,47 @@ export const deleteEvent = async (req, res) => {
     });
   }
 };
+
+export const updateEvent = async (req, res) => {
+  try {
+    const event = await Event.findById(req.params.id);
+
+    if (!event) {
+      return res.status(404).json({
+        success: false,
+        message: "Event not found",
+      });
+    }
+
+    if (event.userId.toString() !== req.user.id) {
+      return res.status(403).json({
+        success: false,
+        message: "Not authorized to update this event",
+      });
+    }
+
+    const updatedEvent = await Event.findByIdAndUpdate(
+      req.params.id,
+      {
+        ...req.body,
+      },
+      {
+        new: true,
+        runValidators: true,
+      },
+    );
+
+    res.status(200).json({
+      success: true,
+      data: updatedEvent,
+      message: "Event updated successfully",
+    });
+  } catch (error) {
+    console.log(error);
+
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};

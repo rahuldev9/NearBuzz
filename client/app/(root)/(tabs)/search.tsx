@@ -1,33 +1,50 @@
 import { MaterialIcons } from "@expo/vector-icons";
-import React, { useState } from "react";
-import {
-  FlatList,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import * as Location from "expo-location";
+import React, { useEffect, useState } from "react";
+import { ActivityIndicator, Text, TextInput, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+
+import AppMap from "@/Components/AppMap.web";
 
 export default function SearchScreen() {
   const [search, setSearch] = useState("");
 
-  const cities = [
-    "Hyderabad",
-    "Mumbai",
-    "Delhi",
-    "Bengaluru",
-    "Chennai",
-    "Pune",
-  ];
+  const [location, setLocation] = useState<{
+    latitude: number;
+    longitude: number;
+  } | null>(null);
+
+  useEffect(() => {
+    getCurrentLocation();
+  }, []);
+
+  const getCurrentLocation = async () => {
+    try {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+
+      if (status !== "granted") {
+        return;
+      }
+
+      const currentLocation = await Location.getCurrentPositionAsync({});
+
+      setLocation({
+        latitude: currentLocation.coords.latitude,
+        longitude: currentLocation.coords.longitude,
+      });
+    } catch (error) {
+      console.log("Location Error:", error);
+    }
+  };
 
   return (
     <SafeAreaView className="flex-1 bg-slate-50">
-      <View className="p-5">
+      <View className="flex-1 p-5">
         <Text className="text-3xl font-bold text-slate-900">Search</Text>
 
         <View className="mt-5 flex-row items-center bg-white rounded-2xl px-4 h-14">
           <MaterialIcons name="search" size={22} color="#64748B" />
+
           <TextInput
             placeholder="Search city..."
             value={search}
@@ -36,17 +53,19 @@ export default function SearchScreen() {
           />
         </View>
 
-        <Text className="text-lg font-semibold mt-6 mb-3">Popular Cities</Text>
-
-        <FlatList
-          data={cities}
-          keyExtractor={(item) => item}
-          renderItem={({ item }) => (
-            <TouchableOpacity className="bg-white p-4 rounded-xl mb-3">
-              <Text>{item}</Text>
-            </TouchableOpacity>
+        <View className="mt-5 flex-1">
+          {!location ? (
+            <View className="flex-1 justify-center items-center">
+              <ActivityIndicator size="large" />
+            </View>
+          ) : (
+            <AppMap
+              latitude={location.latitude}
+              longitude={location.longitude}
+              height={400}
+            />
           )}
-        />
+        </View>
       </View>
     </SafeAreaView>
   );

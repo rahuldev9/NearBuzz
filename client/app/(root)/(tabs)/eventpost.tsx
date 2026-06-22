@@ -1,4 +1,10 @@
-import { createEvent, deleteEvent, getMyEvents } from "@/services/eventService";
+import ConfirmDialog from "@/Components/ConfirmDialog";
+import {
+  createEvent,
+  deleteEvent,
+  getMyEvents,
+  updateEvent,
+} from "@/services/eventService";
 import { AntDesign, MaterialIcons } from "@expo/vector-icons";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import React, { useEffect, useState } from "react";
@@ -38,6 +44,10 @@ export default function EventPostingScreen() {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showTimePicker, setShowTimePicker] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
+  const [isEditing, setIsEditing] = useState(false);
+
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   useEffect(() => {
     loadEvents();
@@ -142,7 +152,7 @@ export default function EventPostingScreen() {
       const isoTimestamp = finalDate.toISOString();
       console.log("Sending Payload ISO Timestamp:", isoTimestamp);
 
-      const response = await createEvent({
+      const payload = {
         title,
         description,
         category,
@@ -150,9 +160,17 @@ export default function EventPostingScreen() {
         address,
         startDate: isoTimestamp,
         endDate: isoTimestamp,
-      });
+      };
 
-      setStatusMessage("Event published successfully!");
+      if (isEditing && selectedEventId) {
+        await updateEvent(selectedEventId, payload);
+
+        setStatusMessage("Event updated successfully!");
+      } else {
+        await createEvent(payload);
+
+        setStatusMessage("Event published successfully!");
+      }
 
       Alert.alert("Success", "Event Published Successfully");
       await loadEvents();
@@ -165,6 +183,7 @@ export default function EventPostingScreen() {
       setDate("");
       setTime("");
       setErrors({});
+      setStatusMessage("");
     } catch (error) {
       console.error("API Error caught:", error);
       const errorMessage =
@@ -177,24 +196,49 @@ export default function EventPostingScreen() {
       setLoading(false);
     }
   };
-
-  const handleDeleteEvent = async (eventId: string) => {
-    if (!eventId) {
-      return setStatusMessage("Event Id not Found");
-    }
+  const handleDeleteEvent = async () => {
+    if (!selectedEventId) return;
 
     try {
-      await deleteEvent(eventId);
+      setLoading(true);
+
+      await deleteEvent(selectedEventId);
       await loadEvents();
+
+      setShowConfirm(false);
+      setSelectedEventId(null);
+
       setStatusMessage("Event deleted successfully.");
     } catch (err) {
-      console.log(err);
       const message =
         err instanceof Error ? err.message : "Failed to delete event";
+
       setStatusMessage(message);
+    } finally {
+      setLoading(false);
     }
   };
 
+  const handleEditEvent = (event: any) => {
+    setSelectedEventId(event._id);
+
+    setTitle(event.title);
+    setDescription(event.description);
+    setCategory(event.category);
+    setVenue(event.venueName);
+    setAddress(event.address);
+
+    const date = new Date(event.startDate);
+
+    setDate(date.toISOString().split("T")[0]);
+    setTime(
+      `${String(date.getHours()).padStart(2, "0")}:${String(
+        date.getMinutes(),
+      ).padStart(2, "0")}`,
+    );
+
+    setIsEditing(true);
+  };
   return (
     <SafeAreaView className="flex-1 bg-slate-50">
       <ScrollView className="flex-1 px-5" showsVerticalScrollIndicator={false}>
@@ -412,13 +456,30 @@ export default function EventPostingScreen() {
           >
             <View className="flex-row items-center justify-center gap-2">
               <Text className="text-center text-white font-bold text-lg">
-                {loading ? "Publishing..." : "Publish Event"}
+                {loading
+                  ? "Saving..."
+                  : isEditing
+                    ? "Update Event"
+                    : "Publish Event"}
               </Text>
               {loading && <ActivityIndicator color="#FFF" />}
             </View>
           </TouchableOpacity>
         </View>
-
+        {showConfirm && (
+          <ConfirmDialog
+            visible={showConfirm}
+            loading={loading}
+            title="Delete Event"
+            message="Are you sure you want to delete this event?"
+            confirmText="Delete"
+            onConfirm={handleDeleteEvent}
+            onCancel={() => {
+              setShowConfirm(false);
+              setSelectedEventId(null);
+            }}
+          />
+        )}
         {/* Preview Card */}
         <Text className="text-2xl font-bold mt-8 mb-4">My Events</Text>
 
@@ -437,12 +498,24 @@ export default function EventPostingScreen() {
                 <Text className="text-lg font-bold ml-3 flex-1">
                   {event.title}
                 </Text>
-                <TouchableOpacity
-                  disabled={loading}
-                  onPress={() => handleDeleteEvent(event._id)}
-                >
-                  <AntDesign name="delete" size={16} color="red" />
-                </TouchableOpacity>
+                <View className="flex-row items-center gap-3">
+                  <TouchableOpacity
+                    disabled={loading}
+                    onPress={() => {
+                      setSelectedEventId(event._id);
+                      setShowConfirm(true);
+                    }}
+                  >
+                    <AntDesign name="delete" size={18} color="red" />
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    disabled={loading}
+                    onPress={() => handleEditEvent(event)}
+                  >
+                    <AntDesign name="edit" size={18} color="#2563EB" />
+                  </TouchableOpacity>
+                </View>
               </View>
 
               <Text className="text-slate-500 mt-1">{event.category}</Text>
