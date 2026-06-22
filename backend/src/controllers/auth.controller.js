@@ -1,4 +1,5 @@
 import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
 import OtpToken from "../models/OtpToken.js";
 import User from "../models/User.js";
 import { sendOtpEmail } from "../services/email.service.js";
@@ -13,6 +14,108 @@ const sanitizeUser = (user) => ({
   email: user.email,
   role: user.role,
 });
+
+const getCookieOptions = (maxAge) => {
+  const isProduction = process.env.NODE_ENV === "production";
+
+  return {
+    httpOnly: true,
+    secure: isProduction,
+    sameSite: isProduction ? "none" : "lax",
+    maxAge,
+    path: "/",
+  };
+};
+
+const setTokenCookies = (res, accessToken, refreshToken) => {
+  res.cookie("accessToken", accessToken, getCookieOptions(15 * 60 * 1000));
+  res.cookie(
+    "refreshToken",
+    refreshToken,
+    getCookieOptions(7 * 24 * 60 * 60 * 1000),
+  );
+};
+
+const clearTokenCookies = (res) => {
+  const cookieOptions = {
+    path: "/",
+    sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+    secure: process.env.NODE_ENV === "production",
+  };
+
+  res.clearCookie("accessToken", cookieOptions);
+  res.clearCookie("refreshToken", cookieOptions);
+};
+
+const getTokenFromRequest = (req) =>
+  req.cookies?.accessToken || req.headers.authorization?.split(" ")[1] || null;
+
+const getRefreshTokenFromRequest = (req) =>
+  req.cookies?.refreshToken ||
+  req.body?.refreshToken ||
+  req.headers["x-refresh-token"] ||
+  null;
+
+const refreshSession = async (req, res) => {
+  const refreshToken = getRefreshTokenFromRequest(req);
+
+  if (!refreshToken) {
+    clearTokenCookies(res);
+    return res.status(401).json({ message: "Refresh token missing" });
+  }
+
+  try {
+    const decoded = jwt.verify(refreshToken, process.env.REFRESH_SECRET);
+    const user = await User.findById(decoded.id);
+
+    if (!user) {
+      clearTokenCookies(res);
+      return res.status(401).json({ message: "Invalid refresh token" });
+    }
+
+    const accessToken = generateAccessToken(user);
+    const newRefreshToken = generateRefreshToken(user);
+
+    setTokenCookies(res, accessToken, newRefreshToken);
+
+    return res.json({
+      success: true,
+      user: sanitizeUser(user),
+      accessToken,
+      refreshToken: newRefreshToken,
+    });
+  } catch (err) {
+    clearTokenCookies(res);
+    return res.status(401).json({ message: "Invalid refresh token" });
+  }
+};
+
+export const getCurrentUser = async (req, res) => {
+  const accessToken = getTokenFromRequest(req);
+
+  if (!accessToken) {
+    return refreshSession(req, res);
+  }
+
+  try {
+    const decoded = jwt.verify(accessToken, process.env.JWT_SECRET);
+    const user = await User.findById(decoded.id);
+
+    if (!user) {
+      clearTokenCookies(res);
+      return res.status(401).json({ message: "User not found" });
+    }
+
+    return res.json({ success: true, user: sanitizeUser(user) });
+  } catch (error) {
+    if (error?.name === "TokenExpiredError") {
+      return refreshSession(req, res);
+    }
+
+    clearTokenCookies(res);
+    return res.status(401).json({ message: "Invalid token" });
+  }
+};
 
 const generateOtp = () =>
   Math.floor(100000 + Math.random() * 900000).toString();
@@ -183,6 +286,8 @@ export const register = async (req, res) => {
   const accessToken = generateAccessToken(user);
   const refreshToken = generateRefreshToken(user);
 
+  setTokenCookies(res, accessToken, refreshToken);
+
   await OtpToken.deleteOne({ email, code: otp, purpose: "registration" });
 
   res.status(201).json({
@@ -220,6 +325,8 @@ export const login = async (req, res) => {
   const sanitizedUser = sanitizeUser(user);
   const accessToken = generateAccessToken(user);
   const refreshToken = generateRefreshToken(user);
+
+  setTokenCookies(res, accessToken, refreshToken);
 
   res.json({
     user: sanitizedUser,
@@ -262,6 +369,13 @@ export const verifyOtp = async (req, res) => {
   }
 
   res.json({ success: true, message: "OTP verified" });
+};
+
+export const refreshToken = async (req, res) => refreshSession(req, res);
+
+export const logout = async (req, res) => {
+  clearTokenCookies(res);
+  res.json({ success: true, message: "Logged out successfully" });
 };
 
 export const resetPassword = async (req, res) => {

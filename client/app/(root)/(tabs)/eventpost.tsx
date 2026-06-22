@@ -1,11 +1,11 @@
+import { createEvent, deleteEvent, getMyEvents } from "@/services/eventService";
+import { AntDesign, MaterialIcons } from "@expo/vector-icons";
+import DateTimePicker from "@react-native-community/datetimepicker";
 import React, { useEffect, useState } from "react";
-
-import { createEvent, getMyEvents } from "@/services/eventService";
-import { MaterialIcons } from "@expo/vector-icons";
-
 import {
   ActivityIndicator,
   Alert,
+  Platform,
   ScrollView,
   Text,
   TextInput,
@@ -35,6 +35,9 @@ export default function EventPostingScreen() {
   const [events, setEvents] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<FormErrors>({});
+  const [selectedDate, setSelectedDate] = useState(new Date());
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [showTimePicker, setShowTimePicker] = useState(false);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   useEffect(() => {
     loadEvents();
@@ -82,7 +85,6 @@ export default function EventPostingScreen() {
   };
 
   const handlePublish = async () => {
-    console.log("Publish button pressed!"); // Debug log 1
     setStatusMessage(null);
 
     if (!validateForm()) {
@@ -93,7 +95,6 @@ export default function EventPostingScreen() {
     try {
       setLoading(true);
       setStatusMessage("Publishing event...");
-      console.log("Validation passed. Attempting API Request..."); // Debug log 3
 
       const parseDateTime = (dateValue: string, timeValue: string) => {
         const trimmedDate = dateValue.trim();
@@ -177,6 +178,23 @@ export default function EventPostingScreen() {
     }
   };
 
+  const handleDeleteEvent = async (eventId: string) => {
+    if (!eventId) {
+      return setStatusMessage("Event Id not Found");
+    }
+
+    try {
+      await deleteEvent(eventId);
+      await loadEvents();
+      setStatusMessage("Event deleted successfully.");
+    } catch (err) {
+      console.log(err);
+      const message =
+        err instanceof Error ? err.message : "Failed to delete event";
+      setStatusMessage(message);
+    }
+  };
+
   return (
     <SafeAreaView className="flex-1 bg-slate-50">
       <ScrollView className="flex-1 px-5" showsVerticalScrollIndicator={false}>
@@ -241,40 +259,112 @@ export default function EventPostingScreen() {
             </Text>
           )}
 
-          {/* Date */}
           <Text className="font-semibold mt-5 mb-2">Date</Text>
-          <TextInput
-            placeholder="2026-07-20"
-            value={date}
-            onChangeText={(val) => {
-              setDate(val);
-              clearError("date");
-            }}
-            className={`border rounded-xl px-4 py-3 ${errors.date ? "border-red-500 bg-red-50/30" : "border-slate-300"}`}
-          />
-          {errors.date && (
-            <Text className="text-red-500 text-xs mt-1 ml-1">
-              {errors.date}
-            </Text>
-          )}
 
+          {Platform.OS === "web" ? (
+            <input
+              type="date"
+              value={date}
+              onChange={(e) => setDate(e.target.value)}
+              style={{
+                padding: 12,
+                borderRadius: 12,
+                border: "1px solid #CBD5E1",
+                width: "100%",
+              }}
+            />
+          ) : (
+            <>
+              <TouchableOpacity
+                onPress={() => setShowDatePicker(true)}
+                className={`border rounded-xl px-4 py-4 ${
+                  errors.date
+                    ? "border-red-500 bg-red-50/30"
+                    : "border-slate-300"
+                }`}
+              >
+                <Text className={date ? "text-slate-900" : "text-slate-400"}>
+                  {date || "Select Date"}
+                </Text>
+              </TouchableOpacity>
+
+              {showDatePicker && (
+                <DateTimePicker
+                  value={selectedDate}
+                  mode="date"
+                  display="default"
+                  onChange={(event, pickedDate) => {
+                    setShowDatePicker(false);
+
+                    if (pickedDate) {
+                      setSelectedDate(pickedDate);
+
+                      const formattedDate = `${pickedDate.getFullYear()}-${String(
+                        pickedDate.getMonth() + 1,
+                      ).padStart(2, "0")}-${String(
+                        pickedDate.getDate(),
+                      ).padStart(2, "0")}`;
+
+                      setDate(formattedDate);
+                      clearError("date");
+                    }
+                  }}
+                />
+              )}
+            </>
+          )}
+          {/* Time */}
           {/* Time */}
           <Text className="font-semibold mt-5 mb-2">Time</Text>
-          <TextInput
-            placeholder="18:00"
-            value={time}
-            onChangeText={(val) => {
-              setTime(val);
-              clearError("time");
-            }}
-            className={`border rounded-xl px-4 py-3 ${errors.time ? "border-red-500 bg-red-50/30" : "border-slate-300"}`}
-          />
-          {errors.time && (
-            <Text className="text-red-500 text-xs mt-1 ml-1">
-              {errors.time}
-            </Text>
-          )}
 
+          {Platform.OS === "web" ? (
+            <input
+              type="time"
+              value={time}
+              onChange={(e) => {
+                setTime(e.target.value);
+                clearError("time");
+              }}
+              style={{
+                width: "100%",
+                padding: 14,
+                borderRadius: 12,
+                border: errors.time ? "1px solid #ef4444" : "1px solid #cbd5e1",
+                outline: "none",
+              }}
+            />
+          ) : (
+            <>
+              <TouchableOpacity
+                onPress={() => setShowTimePicker(true)}
+                className="border border-slate-300 rounded-xl px-4 py-4"
+              >
+                <Text>{time || "Select Time"}</Text>
+              </TouchableOpacity>
+
+              {showTimePicker && (
+                <DateTimePicker
+                  value={selectedDate}
+                  mode="time"
+                  is24Hour
+                  onChange={(event, pickedTime) => {
+                    setShowTimePicker(false);
+
+                    if (pickedTime) {
+                      const formattedTime = `${String(
+                        pickedTime.getHours(),
+                      ).padStart(2, "0")}:${String(
+                        pickedTime.getMinutes(),
+                      ).padStart(2, "0")}`;
+
+                      setTime(formattedTime);
+                      clearError("time");
+                    }
+                  }}
+                />
+              )}
+            </>
+          )}
           {/* Venue */}
           <Text className="font-semibold mt-5 mb-2">Venue</Text>
           <TextInput
@@ -347,6 +437,12 @@ export default function EventPostingScreen() {
                 <Text className="text-lg font-bold ml-3 flex-1">
                   {event.title}
                 </Text>
+                <TouchableOpacity
+                  disabled={loading}
+                  onPress={() => handleDeleteEvent(event._id)}
+                >
+                  <AntDesign name="delete" size={16} color="red" />
+                </TouchableOpacity>
               </View>
 
               <Text className="text-slate-500 mt-1">{event.category}</Text>

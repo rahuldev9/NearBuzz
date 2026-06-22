@@ -63,3 +63,32 @@ export const getSingleEvent = async (req, res) => {
     });
   }
 };
+
+export const deleteEvent = async (req, res) => {
+  try {
+    const event = await Event.findById(req.params.id);
+
+    if (!event) {
+      return res.status(404).json({
+        message: "Event not found",
+      });
+    }
+
+    if (event.userId.toString() !== req.user.id) {
+      return res.status(403).json({
+        message: "Not authorized to delete this event",
+      });
+    }
+
+    await event.deleteOne();
+
+    res.json({
+      success: true,
+      message: "Event deleted successfully",
+    });
+  } catch (error) {
+    res.status(500).json({
+      message: error.message,
+    });
+  }
+};

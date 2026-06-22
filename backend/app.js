@@ -1,3 +1,4 @@
+import cookieParser from "cookie-parser";
 import cors from "cors";
 import express from "express";
 import helmet from "helmet";
@@ -6,15 +7,19 @@ import morgan from "morgan";
 import authRoutes from "./src/routes/auth.routes.js";
 import eventRoutes from "./src/routes/event.routes.js";
 const app = express();
-const corsOrigin = process.env.CORS_ORIGIN || "*";
+const corsOrigin = process.env.CORS_ORIGIN || "http://localhost:8081";
 
 app.use(helmet());
 
-app.use(
-  cors({
-    origin: corsOrigin,
-  }),
-);
+const corsOptions = {
+  origin: corsOrigin === "*" ? true : corsOrigin,
+  credentials: true,
+  allowedHeaders: ["Content-Type", "Authorization"],
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+};
+
+app.use(cors(corsOptions));
+app.use(cookieParser());
 
 app.use(express.json());
 

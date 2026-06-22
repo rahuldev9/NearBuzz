@@ -1,6 +1,7 @@
 import express from "express";
 import {
   createEvent,
+  deleteEvent,
   getAllEvents,
   getMyEvents,
   getSingleEvent,
@@ -13,5 +14,6 @@ router.post("/", protect, createEvent);
 router.get("/", protect, getAllEvents);
 router.get("/my-events", protect, getMyEvents);
 router.get("/:id", protect, getSingleEvent);
+router.delete("/:id", protect, deleteEvent);
 
 export default router;

@@ -1,7 +1,5 @@
 import { EVENTS_API_URL } from "@/config/api";
-import { KEY_ACCESS_TOKEN } from "@/config/auth";
-import * as SecureStore from "expo-secure-store";
-import { Platform } from "react-native";
+import { authFetch } from "./apiClient";
 
 export type Event = {
   _id: string;
@@ -27,12 +25,23 @@ export type CreateEventPayload = {
   bannerImage?: string;
 };
 
-const getToken = async () => {
-  if (Platform.OS === "web") {
-    return localStorage.getItem(KEY_ACCESS_TOKEN);
+const parseResponse = async (response: Response) => {
+  const contentType = response.headers.get("Content-Type") || "";
+
+  const data = contentType.includes("application/json")
+    ? await response.json()
+    : await response.text();
+
+  if (!response.ok) {
+    const message =
+      typeof data === "string"
+        ? data
+        : data?.message || response.statusText || "Request failed";
+
+    throw new Error(message);
   }
 
-  return SecureStore.getItemAsync(KEY_ACCESS_TOKEN);
+  return data;
 };
 
 /* ==========================
@@ -40,24 +49,15 @@ const getToken = async () => {
 ========================== */
 
 export const createEvent = async (payload: CreateEventPayload) => {
-  const token = await getToken();
-
-  const response = await fetch(EVENTS_API_URL, {
+  const response = await authFetch(EVENTS_API_URL, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
     },
     body: JSON.stringify(payload),
   });
 
-  const text = await response.text();
-
-  if (!response.ok) {
-    throw new Error(text);
-  }
-
-  return JSON.parse(text);
+  return parseResponse(response);
 };
 
 /* ==========================
@@ -65,32 +65,15 @@ export const createEvent = async (payload: CreateEventPayload) => {
 ========================== */
 
 export const getEvents = async () => {
-  const response = await fetch(EVENTS_API_URL);
+  const response = await authFetch(EVENTS_API_URL);
 
-  const data = await response.json();
-
-  if (!response.ok) {
-    throw new Error(data.message || "Failed to fetch events");
-  }
-
-  return data;
+  return parseResponse(response);
 };
+
 export const getMyEvents = async () => {
-  const token = await getToken();
+  const response = await authFetch(`${EVENTS_API_URL}/my-events`);
 
-  const response = await fetch(`${EVENTS_API_URL}/my-events`, {
-    headers: {
-      Authorization: token ? `Bearer ${token}` : "",
-    },
-  });
-
-  const data = await response.json();
-
-  if (!response.ok) {
-    throw new Error(data.message);
-  }
-
-  return data;
+  return parseResponse(response);
 };
 
 /* ==========================
@@ -98,15 +81,9 @@ export const getMyEvents = async () => {
 ========================== */
 
 export const getEvent = async (eventId: string) => {
-  const response = await fetch(`${EVENTS_API_URL}/${eventId}`);
+  const response = await authFetch(`${EVENTS_API_URL}/${eventId}`);
 
-  const data = await response.json();
-
-  if (!response.ok) {
-    throw new Error(data.message || "Failed to fetch event");
-  }
-
-  return data;
+  return parseResponse(response);
 };
 
 /* ==========================
@@ -117,24 +94,15 @@ export const updateEvent = async (
   eventId: string,
   payload: Partial<CreateEventPayload>,
 ) => {
-  const token = await getToken();
-
-  const response = await fetch(`${EVENTS_API_URL}/${eventId}`, {
+  const response = await authFetch(`${EVENTS_API_URL}/${eventId}`, {
     method: "PUT",
     headers: {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
     },
     body: JSON.stringify(payload),
   });
 
-  const data = await response.json();
-
-  if (!response.ok) {
-    throw new Error(data.message || "Failed to update event");
-  }
-
-  return data;
+  return parseResponse(response);
 };
 
 /* ==========================
@@ -142,22 +110,11 @@ export const updateEvent = async (
 ========================== */
 
 export const deleteEvent = async (eventId: string) => {
-  const token = await getToken();
-
-  const response = await fetch(`${EVENTS_API_URL}/${eventId}`, {
+  const response = await authFetch(`${EVENTS_API_URL}/${eventId}`, {
     method: "DELETE",
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
   });
 
-  const data = await response.json();
-
-  if (!response.ok) {
-    throw new Error(data.message || "Failed to delete event");
-  }
-
-  return data;
+  return parseResponse(response);
 };
 
 /* ==========================
@@ -165,22 +122,11 @@ export const deleteEvent = async (eventId: string) => {
 ========================== */
 
 export const saveEvent = async (eventId: string) => {
-  const token = await getToken();
-
-  const response = await fetch(`${EVENTS_API_URL}/${eventId}/save`, {
+  const response = await authFetch(`${EVENTS_API_URL}/${eventId}/save`, {
     method: "POST",
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
   });
 
-  const data = await response.json();
-
-  if (!response.ok) {
-    throw new Error(data.message || "Failed to save event");
-  }
-
-  return data;
+  return parseResponse(response);
 };
 
 /* ==========================
@@ -188,20 +134,9 @@ export const saveEvent = async (eventId: string) => {
 ========================== */
 
 export const attendEvent = async (eventId: string) => {
-  const token = await getToken();
-
-  const response = await fetch(`${EVENTS_API_URL}/${eventId}/attend`, {
+  const response = await authFetch(`${EVENTS_API_URL}/${eventId}/attend`, {
     method: "POST",
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
   });
 
-  const data = await response.json();
-
-  if (!response.ok) {
-    throw new Error(data.message || "Failed to attend event");
-  }
-
-  return data;
+  return parseResponse(response);
 };

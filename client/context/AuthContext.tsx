@@ -98,6 +98,11 @@ const saveAuthData = async (
   accessToken: string,
   refreshToken: string,
 ) => {
+  if (Platform.OS === "web") {
+    await storage.setItem(KEY_USER, JSON.stringify(user));
+    return;
+  }
+
   await Promise.all([
     storage.setItem(KEY_USER, JSON.stringify(user)),
     storage.setItem(KEY_ACCESS_TOKEN, accessToken),
@@ -106,6 +111,11 @@ const saveAuthData = async (
 };
 
 const clearAuthData = async () => {
+  if (Platform.OS === "web") {
+    await storage.removeItem(KEY_USER);
+    return;
+  }
+
   await Promise.all([
     storage.removeItem(KEY_USER),
     storage.removeItem(KEY_ACCESS_TOKEN),
@@ -135,13 +145,31 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   useEffect(() => {
     const bootstrapAuth = async () => {
       try {
-        const storedUser = await storage.getItem(KEY_USER);
+        if (Platform.OS === "web") {
+          const response = await fetch(`${AUTH_API_URL}/current-user`, {
+            headers: {
+              "Content-Type": "application/json",
+            },
+            credentials: "include",
+          });
 
-        if (storedUser) {
-          setUser(JSON.parse(storedUser));
+          const data = await response.json();
+
+          if (response.ok && data.user) {
+            setUser(data.user);
+          } else {
+            await clearAuthData();
+          }
+        } else {
+          const storedUser = await storage.getItem(KEY_USER);
+
+          if (storedUser) {
+            setUser(JSON.parse(storedUser));
+          }
         }
       } catch (err) {
         console.warn("Failed to restore auth:", err);
+        await clearAuthData();
       } finally {
         setIsInitializing(false);
       }
@@ -164,6 +192,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         headers: {
           "Content-Type": "application/json",
         },
+        credentials: Platform.OS === "web" ? "include" : undefined,
         body: JSON.stringify({
           email,
           password,
@@ -243,6 +272,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         headers: {
           "Content-Type": "application/json",
         },
+        credentials: Platform.OS === "web" ? "include" : undefined,
         body: JSON.stringify({
           email: pendingRegistration.email,
           otp,
@@ -280,6 +310,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         headers: {
           "Content-Type": "application/json",
         },
+        credentials: Platform.OS === "web" ? "include" : undefined,
         body: JSON.stringify({
           ...pendingRegistration,
           password,
@@ -320,8 +351,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     try {
       setIsLoading(true);
 
-      await clearAuthData();
+      await fetch(`${AUTH_API_URL}/logout`, {
+        method: "POST",
+        credentials: Platform.OS === "web" ? "include" : undefined,
+      }).catch(() => null);
 
+      await clearAuthData();
       setUser(null);
     } finally {
       setIsLoading(false);
