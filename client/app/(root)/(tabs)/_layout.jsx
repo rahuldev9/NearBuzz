@@ -36,11 +36,11 @@ export default function TabLayout() {
       />
 
       <Tabs.Screen
-        name="favorites"
+        name="eventpost"
         options={{
-          title: "Favorites",
+          title: "Event Post",
           tabBarIcon: ({ color, size }) => (
-            <MaterialIcons name="favorite" size={size} color={color} />
+            <MaterialIcons name="event" size={size} color={color} />
           ),
         }}
       />
