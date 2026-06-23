@@ -2,8 +2,9 @@ import React from "react";
 import {
   ActivityIndicator,
   Modal,
+  Platform,
+  Pressable,
   Text,
-  TouchableOpacity,
   View,
 } from "react-native";
 
@@ -29,36 +30,67 @@ export default function ConfirmDialog({
   cancelText = "Cancel",
 }: Props) {
   return (
-    <Modal transparent visible={visible} animationType="fade">
+    <Modal
+      transparent
+      visible={visible}
+      animationType="fade"
+      statusBarTranslucent
+      onRequestClose={onCancel}
+    >
       <View className="flex-1 justify-center items-center bg-black/50 px-5">
-        <View className="bg-white rounded-3xl p-6 w-full max-w-md">
-          <Text className="text-xl font-bold">{title}</Text>
+        <View
+          className="bg-white rounded-3xl p-6 w-full"
+          style={{
+            maxWidth: 420,
+            elevation: 8, // Android
+            shadowColor: "#000", // iOS/Web
+            shadowOffset: { width: 0, height: 8 },
+            shadowOpacity: 0.15,
+            shadowRadius: 20,
+          }}
+        >
+          <Text className="text-2xl font-bold text-slate-900">{title}</Text>
 
-          <Text className="text-slate-600 mt-3">{message}</Text>
+          <Text className="text-slate-600 mt-3 leading-6">{message}</Text>
 
           {loading && (
-            <View className="items-center mt-5">
+            <View className="items-center mt-6">
               <ActivityIndicator size="large" />
-              <Text className="mt-2 text-slate-500">Deleting event...</Text>
+              <Text className="mt-3 text-slate-500">Processing...</Text>
             </View>
           )}
 
-          <View className="flex-row justify-end mt-6">
-            <TouchableOpacity
+          <View className="flex-row justify-end mt-8 gap-3">
+            <Pressable
               disabled={loading}
               onPress={onCancel}
-              className="px-4 py-2 mr-3"
+              className="px-5 py-3 rounded-xl"
+              style={({ hovered, pressed }) => [
+                {
+                  opacity: pressed ? 0.7 : 1,
+                  backgroundColor: hovered ? "#f8fafc" : "transparent",
+                },
+              ]}
             >
-              <Text className="text-slate-600">{cancelText}</Text>
-            </TouchableOpacity>
+              <Text className="font-medium text-slate-700">{cancelText}</Text>
+            </Pressable>
 
-            <TouchableOpacity
+            <Pressable
               disabled={loading}
               onPress={onConfirm}
-              className="bg-red-500 px-5 py-2 rounded-xl"
+              className="px-5 py-3 rounded-xl bg-red-500"
+              style={({ hovered, pressed }) => [
+                {
+                  opacity: loading ? 0.6 : pressed ? 0.8 : 1,
+                  ...(Platform.OS === "web" &&
+                    hovered && {
+                      transform: [{ scale: 1.02 }],
+                    }),
+                },
+              ]}
             >
               <Text className="text-white font-semibold">{confirmText}</Text>
-            </TouchableOpacity>
+            </Pressable>
           </View>
         </View>
       </View>
