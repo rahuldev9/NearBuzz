@@ -7,6 +7,8 @@ import {
 } from "@/services/eventService";
 import { AntDesign, MaterialIcons } from "@expo/vector-icons";
 import DateTimePicker from "@react-native-community/datetimepicker";
+import * as Location from "expo-location";
+import { useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
@@ -31,6 +33,7 @@ interface FormErrors {
 }
 
 export default function EventPostingScreen() {
+  const router = useRouter();
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [category, setCategory] = useState("");
@@ -38,6 +41,9 @@ export default function EventPostingScreen() {
   const [address, setAddress] = useState("");
   const [date, setDate] = useState("");
   const [time, setTime] = useState("");
+  const [status, setStatus] = useState<"Scheduled" | "Live" | "Closed">(
+    "Scheduled",
+  );
   const [events, setEvents] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<FormErrors>({});
@@ -77,6 +83,7 @@ export default function EventPostingScreen() {
     if (!title.trim()) newErrors.title = "Event title is required.";
     if (!description.trim()) newErrors.description = "Description is required.";
     if (!category.trim()) newErrors.category = "Category field is required.";
+
     if (!venue.trim()) newErrors.venue = "Venue name is required.";
     if (!address.trim()) newErrors.address = "Street address is required.";
 
@@ -152,10 +159,32 @@ export default function EventPostingScreen() {
       const isoTimestamp = finalDate.toISOString();
       console.log("Sending Payload ISO Timestamp:", isoTimestamp);
 
+      let latitude: number | undefined;
+      let longitude: number | undefined;
+
+      if (status === "Live") {
+        const { status: locationStatus } =
+          await Location.requestForegroundPermissionsAsync();
+
+        if (locationStatus !== "granted") {
+          setStatusMessage("Location permission is required for live events.");
+          setLoading(false);
+          return;
+        }
+
+        const location = await Location.getCurrentPositionAsync({});
+
+        latitude = location.coords.latitude;
+        longitude = location.coords.longitude;
+      }
+
       const payload = {
         title,
         description,
         category,
+        status,
+        latitude,
+        longitude,
         venueName: venue,
         address,
         startDate: isoTimestamp,
@@ -182,6 +211,7 @@ export default function EventPostingScreen() {
       setAddress("");
       setDate("");
       setTime("");
+      setStatus("Scheduled");
       setErrors({});
     } catch (error) {
       console.error("API Error caught:", error);
@@ -224,8 +254,9 @@ export default function EventPostingScreen() {
     setTitle(event.title);
     setDescription(event.description);
     setCategory(event.category);
-    setVenue(event.venueName);
-    setAddress(event.address);
+    setVenue(event.venueName || "");
+    setAddress(event.address || "");
+    setStatus(event.status || "Scheduled");
 
     const date = new Date(event.startDate);
 
@@ -490,7 +521,18 @@ export default function EventPostingScreen() {
           </View>
         ) : (
           events.map((event) => (
-            <View key={event._id} className="bg-white rounded-3xl p-5 mb-4">
+            <TouchableOpacity
+              key={event._id}
+              disabled={loading}
+              activeOpacity={0.85}
+              onPress={() =>
+                router.push({
+                  pathname: "/event-details/[id]",
+                  params: { id: event._id },
+                })
+              }
+              className="bg-white rounded-3xl p-5 mb-4"
+            >
               <View className="flex-row items-center">
                 <MaterialIcons name="event" size={24} color="#2563EB" />
 
@@ -536,7 +578,7 @@ export default function EventPostingScreen() {
                   {new Date(event.startDate).toLocaleDateString()}
                 </Text>
               </View>
-            </View>
+            </TouchableOpacity>
           ))
         )}
       </ScrollView>
