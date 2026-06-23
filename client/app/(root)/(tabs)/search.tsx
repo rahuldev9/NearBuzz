@@ -1,7 +1,7 @@
 import { MaterialIcons } from "@expo/vector-icons";
 import * as Location from "expo-location";
 import React, { useEffect, useState } from "react";
-import { ActivityIndicator, Text, TextInput, View } from "react-native";
+import { ActivityIndicator, TextInput, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import AppMap from "@/Components/AppMap.web";
@@ -38,35 +38,37 @@ export default function SearchScreen() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-slate-50">
-      <View className="flex-1 p-5">
-        <Text className="text-3xl font-bold text-slate-900">Search</Text>
-
-        <View className="mt-5 flex-row items-center bg-white rounded-2xl px-4 h-14">
-          <MaterialIcons name="search" size={22} color="#64748B" />
-
-          <TextInput
-            placeholder="Search city..."
-            value={search}
-            onChangeText={setSearch}
-            className="flex-1 ml-2"
-          />
+    <SafeAreaView className="flex-1">
+      {!location ? (
+        <View className="flex-1 justify-center items-center">
+          <ActivityIndicator size="large" />
         </View>
-
-        <View className="mt-5 flex-1">
-          {!location ? (
-            <View className="flex-1 justify-center items-center">
-              <ActivityIndicator size="large" />
-            </View>
-          ) : (
+      ) : (
+        <>
+          {/* Full Screen Map */}
+          <View className="absolute inset-0">
             <AppMap
               latitude={location.latitude}
               longitude={location.longitude}
-              height={400}
+              height={1000}
             />
-          )}
-        </View>
-      </View>
+          </View>
+
+          {/* Floating Search Bar */}
+          <View className="absolute top-4 left-4 right-4">
+            <View className="flex-row items-center bg-white rounded-2xl px-4 h-14 shadow">
+              <MaterialIcons name="search" size={22} color="#64748B" />
+
+              <TextInput
+                placeholder="Search city..."
+                value={search}
+                onChangeText={setSearch}
+                className="flex-1 ml-2"
+              />
+            </View>
+          </View>
+        </>
+      )}
     </SafeAreaView>
   );
 }
