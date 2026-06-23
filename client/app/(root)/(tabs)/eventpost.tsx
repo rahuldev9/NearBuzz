@@ -183,7 +183,6 @@ export default function EventPostingScreen() {
       setDate("");
       setTime("");
       setErrors({});
-      setStatusMessage("");
     } catch (error) {
       console.error("API Error caught:", error);
       const errorMessage =
