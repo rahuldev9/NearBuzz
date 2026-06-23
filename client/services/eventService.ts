@@ -6,10 +6,13 @@ export type Event = {
   title: string;
   description: string;
   category: string;
-  venueName: string;
-  address: string;
+  venueName?: string;
+  address?: string;
   startDate: string;
   endDate: string;
+  status?: "Scheduled" | "Live" | "Closed";
+  latitude?: number;
+  longitude?: number;
   bannerImage?: string;
   organizerName?: string;
 };
@@ -18,10 +21,13 @@ export type CreateEventPayload = {
   title: string;
   description: string;
   category: string;
-  venueName: string;
-  address: string;
   startDate: string;
   endDate: string;
+  status?: "Scheduled" | "Live" | "Closed";
+  latitude?: number;
+  longitude?: number;
+  venueName?: string;
+  address?: string;
   bannerImage?: string;
 };
 

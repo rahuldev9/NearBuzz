@@ -2,6 +2,24 @@ import Event from "../models/Event.js";
 
 export const createEvent = async (req, res) => {
   try {
+    const { status, venueName, address, latitude, longitude } = req.body;
+
+    if (status === "Live") {
+      if (latitude == null || longitude == null) {
+        return res.status(400).json({
+          success: false,
+          message: "Live events must include latitude and longitude.",
+        });
+      }
+    }
+
+    if (!venueName || !address) {
+      return res.status(400).json({
+        success: false,
+        message: "Events require a venue name and address.",
+      });
+    }
+
     const event = await Event.create({
       ...req.body,
       userId: req.user.id,
@@ -111,13 +129,35 @@ export const updateEvent = async (req, res) => {
       });
     }
 
+    const { status, venueName, address, latitude, longitude } = req.body;
+    const currentVenueName = venueName ?? event.venueName;
+    const currentAddress = address ?? event.address;
+    const currentLatitude = latitude ?? event.latitude;
+    const currentLongitude = longitude ?? event.longitude;
+
+    if (status === "Live") {
+      if (currentLatitude == null || currentLongitude == null) {
+        return res.status(400).json({
+          success: false,
+          message: "Live events must include latitude and longitude.",
+        });
+      }
+    }
+
+    if (!currentVenueName || !currentAddress) {
+      return res.status(400).json({
+        success: false,
+        message: "Events require a venue name and address.",
+      });
+    }
+
     const updatedEvent = await Event.findByIdAndUpdate(
       req.params.id,
       {
         ...req.body,
       },
       {
-        new: true,
+        returnDocument: "after",
         runValidators: true,
       },
     );

@@ -33,14 +33,26 @@ const eventSchema = new mongoose.Schema(
       required: true,
     },
 
+    status: {
+      type: String,
+      enum: ["Scheduled", "Live", "Closed"],
+      default: "Scheduled",
+    },
+
+    latitude: {
+      type: Number,
+    },
+
+    longitude: {
+      type: Number,
+    },
+
     venueName: {
       type: String,
-      required: true,
     },
 
     address: {
       type: String,
-      required: true,
     },
   },
   {
