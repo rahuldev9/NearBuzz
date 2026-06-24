@@ -1,4 +1,5 @@
 import Event from "../models/Event.js";
+import EventBooking from "../models/EventBooking.js";
 
 export const createEvent = async (req, res) => {
   try {
@@ -101,6 +102,8 @@ export const deleteEvent = async (req, res) => {
         message: "Not authorized to delete this event",
       });
     }
+    // Delete all bookings related to this event
+    await EventBooking.deleteMany({ eventId: event._id });
 
     await event.deleteOne();
 

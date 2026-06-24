@@ -15,6 +15,22 @@ export type Event = {
   longitude?: number;
   bannerImage?: string;
   organizerName?: string;
+  userId?: string;
+};
+
+export type Booking = {
+  _id: string;
+  userEmail: string;
+  bookingStatus: "Booked" | "CheckedIn";
+  qrStatus: "Active" | "Expired";
+  createdAt: string;
+  userId?:
+    | {
+        _id: string;
+        name?: string;
+        email?: string;
+      }
+    | string;
 };
 
 export type CreateEventPayload = {
@@ -171,6 +187,23 @@ export const getMyBookings = async () => {
 
   return parseResponse(response);
 };
+
+export const getEventBookings = async (eventId: string) => {
+  const response = await authFetch(
+    `${EVENTS_BOOKING_API_URL}/event/${eventId}`,
+  );
+
+  return parseResponse(response);
+};
+
+export const deleteBooking = async (bookingId: string) => {
+  const response = await authFetch(`${EVENTS_BOOKING_API_URL}/${bookingId}`, {
+    method: "DELETE",
+  });
+
+  return parseResponse(response);
+};
+
 export const verifyBooking = async (bookingId: string, eventCode: string) => {
   const response = await authFetch(`${EVENTS_BOOKING_API_URL}/verify`, {
     method: "POST",

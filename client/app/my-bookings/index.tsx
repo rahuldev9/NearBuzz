@@ -1,4 +1,5 @@
-import { getMyBookings } from "@/services/eventService";
+import ConfirmDialog from "@/Components/ConfirmDialog";
+import { deleteBooking, getMyBookings } from "@/services/eventService";
 import { AntDesign, MaterialIcons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import React, { useEffect, useState } from "react";
@@ -16,6 +17,10 @@ export default function MyBookingsScreen() {
   const [bookings, setBookings] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [selectedBookingId, setSelectedBookingId] = useState<string | null>(
+    null,
+  );
 
   useEffect(() => {
     loadBookings();
@@ -37,6 +42,22 @@ export default function MyBookingsScreen() {
   const onRefresh = () => {
     setRefreshing(true);
     loadBookings();
+  };
+
+  const handleDeleteBooking = async () => {
+    if (!selectedBookingId) return;
+
+    try {
+      setLoading(true);
+      await deleteBooking(selectedBookingId);
+      setShowConfirm(false);
+      setSelectedBookingId(null);
+      await loadBookings();
+    } catch (err) {
+      console.log("Failed to delete booking", err);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleBookingPress = (bookingId: string) => {
@@ -148,11 +169,38 @@ export default function MyBookingsScreen() {
             <View className="mt-5 pt-4 border-t border-slate-100 flex-row items-center justify-between">
               <Text className="text-blue-600 font-semibold">View QR Pass</Text>
 
-              <AntDesign size={18} color="#2563EB" />
+              <View className="flex-row items-center">
+                <TouchableOpacity
+                  onPress={() => {
+                    setSelectedBookingId(item._id);
+                    setShowConfirm(true);
+                  }}
+                  className="mr-4"
+                >
+                  <AntDesign name="delete" size={18} color="red" />
+                </TouchableOpacity>
+
+                <AntDesign size={18} color="#2563EB" />
+              </View>
             </View>
           </TouchableOpacity>
         )}
       />
+
+      {showConfirm && (
+        <ConfirmDialog
+          visible={showConfirm}
+          loading={loading}
+          title="Cancel Booking"
+          message="Are you sure you want to cancel this booking?"
+          confirmText="Cancel"
+          onConfirm={handleDeleteBooking}
+          onCancel={() => {
+            setShowConfirm(false);
+            setSelectedBookingId(null);
+          }}
+        />
+      )}
     </SafeAreaView>
   );
 }

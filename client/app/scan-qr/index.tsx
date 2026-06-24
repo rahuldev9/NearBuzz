@@ -1,8 +1,14 @@
 import { AntDesign } from "@expo/vector-icons";
 import { CameraView, useCameraPermissions } from "expo-camera";
 import { useRouter } from "expo-router";
-import React, { useState } from "react";
-import { ActivityIndicator, Text, TouchableOpacity, View } from "react-native";
+import React, { useEffect, useState } from "react";
+import {
+  ActivityIndicator,
+  Text,
+  TouchableOpacity,
+  Vibration,
+  View,
+} from "react-native";
 
 import { verifyBooking } from "@/services/eventService";
 
@@ -12,6 +18,7 @@ export default function ScanQRScreen() {
   const [permission, requestPermission] = useCameraPermissions();
 
   const [scanned, setScanned] = useState(false);
+  const [cameraActive, setCameraActive] = useState(true);
   const [verifying, setVerifying] = useState(false);
 
   const [verifyResult, setVerifyResult] = useState<{
@@ -20,13 +27,36 @@ export default function ScanQRScreen() {
     eventId?: string;
   } | null>(null);
 
+  useEffect(() => {
+    if (permission && !permission.granted) {
+      requestPermission();
+    }
+  }, [permission, requestPermission]);
+
+  // Auto-resume camera on failure after short delay so scanning feels responsive
+  React.useEffect(() => {
+    if (!verifyResult) return;
+
+    let t: ReturnType<typeof setTimeout> | null = null;
+
+    if (verifyResult && verifyResult.success === false) {
+      t = setTimeout(() => {
+        setVerifyResult(null);
+        setScanned(false);
+        setCameraActive(true);
+      }, 2200);
+    }
+
+    return () => {
+      if (t) clearTimeout(t);
+    };
+  }, [verifyResult]);
+
   if (!permission) {
     return null;
   }
 
   if (!permission.granted) {
-    requestPermission();
-
     return (
       <View className="flex-1 justify-center items-center bg-white px-6">
         <ActivityIndicator size="large" color="#2563EB" />
@@ -39,22 +69,47 @@ export default function ScanQRScreen() {
   }
 
   const handleScan = async ({ data }: { data: string }) => {
-    if (scanned || verifying) return;
+    if (scanned || verifying || verifyResult) return;
 
     setScanned(true);
+    setCameraActive(false);
     setVerifying(true);
 
-    try {
-      const qrData = JSON.parse(data);
+    let qrData: any = null;
 
+    try {
+      qrData = JSON.parse(data);
+    } catch (err) {
+      Vibration.vibrate(50);
+      setVerifyResult({
+        success: false,
+        message: "Invalid QR code format.",
+      });
+      setVerifying(false);
+      return;
+    }
+
+    if (!qrData || !qrData.bookingId || !qrData.eventCode) {
+      Vibration.vibrate(50);
+      setVerifyResult({
+        success: false,
+        message: "QR code missing required fields.",
+      });
+      setVerifying(false);
+      return;
+    }
+
+    try {
       const response = await verifyBooking(qrData.bookingId, qrData.eventCode);
 
+      Vibration.vibrate(60);
       setVerifyResult({
         success: true,
         message: "User checked in successfully.",
         eventId: response.eventId,
       });
     } catch (error: any) {
+      Vibration.vibrate(50);
       setVerifyResult({
         success: false,
         message: error?.message || "This QR code has already been used.",
@@ -67,13 +122,21 @@ export default function ScanQRScreen() {
   return (
     <View className="flex-1 bg-black">
       {/* Camera */}
-      <CameraView
-        style={{ flex: 1 }}
-        barcodeScannerSettings={{
-          barcodeTypes: ["qr"],
-        }}
-        onBarcodeScanned={handleScan}
-      />
+      {cameraActive ? (
+        <CameraView
+          style={{ flex: 1 }}
+          barcodeScannerSettings={{
+            barcodeTypes: ["qr"],
+          }}
+          onBarcodeScanned={handleScan}
+        />
+      ) : (
+        <View className="flex-1 bg-black items-center justify-center">
+          <Text className="text-white text-base">
+            Camera paused after scan.
+          </Text>
+        </View>
+      )}
 
       {/* Header */}
       <View className="absolute top-14 left-5 right-5 flex-row items-center">
@@ -170,6 +233,7 @@ export default function ScanQRScreen() {
                   onPress={() => {
                     setVerifyResult(null);
                     setScanned(false);
+                    setCameraActive(true);
                   }}
                 >
                   <Text className="text-center font-semibold text-slate-700">
@@ -184,6 +248,7 @@ export default function ScanQRScreen() {
                   onPress={() => {
                     setVerifyResult(null);
                     setScanned(false);
+                    setCameraActive(true);
                   }}
                 >
                   <Text className="text-white text-center font-bold">
@@ -194,11 +259,13 @@ export default function ScanQRScreen() {
                 <TouchableOpacity
                   className="bg-slate-100 rounded-2xl py-4 mt-3"
                   onPress={() => {
-                    router.back();
+                    setVerifyResult(null);
+                    setScanned(false);
+                    setCameraActive(true);
                   }}
                 >
                   <Text className="text-center font-semibold text-slate-700">
-                    Close
+                    Dismiss
                   </Text>
                 </TouchableOpacity>
               </>

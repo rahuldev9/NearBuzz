@@ -119,6 +119,89 @@ export const getMyBookings = async (req, res) => {
   }
 };
 
+export const getEventBookings = async (req, res) => {
+  try {
+    const event = await Event.findById(req.params.eventId);
+
+    if (!event) {
+      return res.status(404).json({
+        success: false,
+        message: "Event not found",
+      });
+    }
+
+    if (event.userId.toString() !== req.user.id) {
+      return res.status(403).json({
+        success: false,
+        message: "Not authorized to view bookings for this event",
+      });
+    }
+
+    const bookings = await EventBooking.find({
+      eventId: event._id,
+    })
+      .populate("userId")
+      .sort({
+        createdAt: -1,
+      });
+
+    res.json({
+      success: true,
+      bookings,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+export const deleteBooking = async (req, res) => {
+  try {
+    const booking = await EventBooking.findById(req.params.id).populate(
+      "eventId",
+    );
+
+    if (!booking) {
+      return res.status(404).json({
+        success: false,
+        message: "Booking not found",
+      });
+    }
+
+    if (!booking.eventId) {
+      return res.status(404).json({
+        success: false,
+        message: "Related event not found",
+      });
+    }
+
+    // Allow deletion by either the event owner or the booking owner (cancellation)
+    const isEventOwner = booking.eventId?.userId?.toString() === req.user.id;
+    const isBookingOwner = booking.userId?.toString() === req.user.id;
+
+    if (!isEventOwner && !isBookingOwner) {
+      return res.status(403).json({
+        success: false,
+        message: "Not authorized to delete this booking",
+      });
+    }
+
+    await booking.deleteOne();
+
+    res.json({
+      success: true,
+      message: "Booking deleted successfully",
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
 export const checkInBooking = async (req, res) => {
   try {
     const booking = await EventBooking.findById(req.params.id);
