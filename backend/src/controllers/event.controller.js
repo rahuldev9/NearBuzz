@@ -20,8 +20,11 @@ export const createEvent = async (req, res) => {
       });
     }
 
+    const eventId = await generateUniqueEventId();
+
     const event = await Event.create({
       ...req.body,
+      eventId,
       userId: req.user.id,
     });
 
@@ -38,6 +41,7 @@ export const createEvent = async (req, res) => {
     });
   }
 };
+
 export const getAllEvents = async (req, res) => {
   try {
     const events = await Event.find().sort({
@@ -175,4 +179,27 @@ export const updateEvent = async (req, res) => {
       message: error.message,
     });
   }
+};
+
+const generateEventId = () => {
+  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+  let result = "";
+
+  for (let i = 0; i < 6; i++) {
+    result += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+
+  return result;
+};
+const generateUniqueEventId = async () => {
+  let eventId;
+  let exists = true;
+
+  while (exists) {
+    eventId = generateEventId();
+
+    exists = await Event.exists({ eventId });
+  }
+
+  return eventId;
 };

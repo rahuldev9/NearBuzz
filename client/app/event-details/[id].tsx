@@ -135,12 +135,96 @@ export default function EventDetailsScreen() {
           </View>
         ) : (
           <View className="bg-white rounded-3xl p-6 shadow-sm">
-            <Text className="text-3xl font-bold text-slate-900">
-              {event.title}
-            </Text>
-            <Text className="text-slate-500 mt-2">{event.category}</Text>
-            <View className="mt-4">
-              <Text className="font-semibold text-slate-900 mb-3">
+            {/* Event Header */}
+            <View className="flex-row justify-between items-start">
+              <View className="flex-1">
+                <Text className="text-3xl font-bold text-slate-900">
+                  {event.title}
+                </Text>
+
+                <Text className="text-slate-500 mt-2">{event.category}</Text>
+              </View>
+
+              <View
+                className={`px-4 py-2 rounded-full ${
+                  status === "Live"
+                    ? "bg-green-100"
+                    : status === "Closed"
+                      ? "bg-red-100"
+                      : "bg-amber-100"
+                }`}
+              >
+                <Text
+                  className={`font-semibold text-xs ${
+                    status === "Live"
+                      ? "text-green-700"
+                      : status === "Closed"
+                        ? "text-red-700"
+                        : "text-amber-700"
+                  }`}
+                >
+                  {status}
+                </Text>
+              </View>
+            </View>
+
+            {/* Description */}
+            <View className="mt-6">
+              <Text className="text-lg font-bold text-slate-900">
+                Description
+              </Text>
+
+              <Text className="text-slate-600 mt-2 leading-6">
+                {event.description}
+              </Text>
+            </View>
+
+            {/* Event Details */}
+            <View className="mt-6 bg-slate-50 rounded-2xl p-4">
+              <View className="flex-row items-start">
+                <MaterialIcons name="location-on" size={22} color="#2563EB" />
+
+                <View className="ml-3 flex-1">
+                  <Text className="font-semibold text-slate-900">Venue</Text>
+
+                  <Text className="text-slate-600 mt-1">{event.venueName}</Text>
+
+                  <Text className="text-slate-500 text-sm">
+                    {event.address}
+                  </Text>
+                </View>
+              </View>
+
+              <View className="h-px bg-slate-200 my-4" />
+
+              <View className="flex-row items-start">
+                <MaterialIcons name="schedule" size={22} color="#2563EB" />
+
+                <View className="ml-3">
+                  <Text className="font-semibold text-slate-900">
+                    Date & Time
+                  </Text>
+
+                  <Text className="text-slate-600 mt-1">{formattedDate}</Text>
+                </View>
+              </View>
+            </View>
+
+            {/* Scan QR Button */}
+            <TouchableOpacity
+              onPress={() => router.push("/scan-qr")}
+              className="bg-blue-600 rounded-2xl p-4 mt-6 flex-row items-center justify-center"
+            >
+              <MaterialIcons name="qr-code-scanner" size={22} color="white" />
+
+              <Text className="text-white font-bold ml-2 text-base">
+                Scan Attendee QR
+              </Text>
+            </TouchableOpacity>
+
+            {/* Status Controls */}
+            <View className="mt-6">
+              <Text className="font-bold text-slate-900 mb-3 text-lg">
                 Event Status
               </Text>
 
@@ -151,11 +235,11 @@ export default function EventDetailsScreen() {
                     disabled={saving}
                     onPress={() => handleStatusChange(option)}
                     className={`flex-1 py-3 rounded-xl items-center ${
-                      status === option ? "bg-white" : ""
+                      status === option ? "bg-white shadow-sm" : ""
                     }`}
                   >
                     <Text
-                      className={`font-medium ${
+                      className={`font-semibold ${
                         status === option ? "text-blue-600" : "text-slate-500"
                       }`}
                     >
@@ -166,43 +250,10 @@ export default function EventDetailsScreen() {
               </View>
 
               {statusMessage ? (
-                <Text className="text-sm text-slate-500 mt-3">
-                  {statusMessage}
-                </Text>
+                <View className="bg-blue-50 rounded-xl p-3 mt-3">
+                  <Text className="text-blue-700 text-sm">{statusMessage}</Text>
+                </View>
               ) : null}
-            </View>
-
-            {/* {event.latitude != null && event.longitude != null ? (
-              <View className="mt-4 rounded-2xl bg-slate-100 p-3">
-                <Text className="text-slate-700">
-                  Latitude: {event.latitude.toFixed(6)}
-                </Text>
-                <Text className="text-slate-700 mt-1">
-                  Longitude: {event.longitude.toFixed(6)}
-                </Text>
-              </View>
-            ) : null} */}
-
-            <View className="mt-5">
-              <Text className="font-semibold text-slate-900">Description</Text>
-              <Text className="text-slate-700 mt-2">{event.description}</Text>
-            </View>
-
-            <View className="mt-6 space-y-4">
-              <View className="flex-row items-center gap-2">
-                <MaterialIcons name="location-on" size={20} color="#2563EB" />
-                <Text className="text-slate-900 font-semibold">Venue</Text>
-              </View>
-              <Text className="text-slate-700 ml-8">{event.venueName}</Text>
-              <Text className="text-slate-700 ml-8">{event.address}</Text>
-
-              <View className="flex-row items-center gap-2 mt-4">
-                <MaterialIcons name="schedule" size={20} color="#2563EB" />
-                <Text className="text-slate-900 font-semibold">
-                  Date & Time
-                </Text>
-              </View>
-              <Text className="text-slate-700 ml-8">{formattedDate}</Text>
             </View>
           </View>
         )}

@@ -1,4 +1,4 @@
-import { EVENTS_API_URL } from "@/config/api";
+import { EVENTS_API_URL, EVENTS_BOOKING_API_URL } from "@/config/api";
 import { authFetch } from "./apiClient";
 
 export type Event = {
@@ -142,6 +142,45 @@ export const saveEvent = async (eventId: string) => {
 export const attendEvent = async (eventId: string) => {
   const response = await authFetch(`${EVENTS_API_URL}/${eventId}/attend`, {
     method: "POST",
+  });
+
+  return parseResponse(response);
+};
+// services/bookingService.ts
+
+export const getBookingById = async (bookingId: string) => {
+  const response = await authFetch(`${EVENTS_BOOKING_API_URL}/${bookingId}`);
+
+  return parseResponse(response);
+};
+
+export const bookEvent = async (eventId: string) => {
+  const response = await authFetch(
+    `${EVENTS_BOOKING_API_URL}/${eventId}/book`,
+    {
+      method: "POST",
+    },
+  );
+
+  return parseResponse(response);
+};
+// services/bookingService.ts
+
+export const getMyBookings = async () => {
+  const response = await authFetch(`${EVENTS_BOOKING_API_URL}/my-bookings`);
+
+  return parseResponse(response);
+};
+export const verifyBooking = async (bookingId: string, eventCode: string) => {
+  const response = await authFetch(`${EVENTS_BOOKING_API_URL}/verify`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      bookingId,
+      eventCode,
+    }),
   });
 
   return parseResponse(response);
