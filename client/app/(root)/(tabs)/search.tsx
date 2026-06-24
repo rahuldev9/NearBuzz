@@ -1,30 +1,21 @@
+import EventBottomSheet from "@/app/Components/EventBottomSheet";
+import AppMap from "@/Components/AppMap";
+import { Event, getEvents } from "@/services/eventService";
 import { MaterialIcons } from "@expo/vector-icons";
 import * as Location from "expo-location";
+import { router } from "expo-router";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
-  Animated,
-  Dimensions,
-  FlatList,
   Keyboard,
   KeyboardEvent,
+  Linking,
   Pressable,
-  Text,
   TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-
-import AppMap from "@/Components/AppMap";
-import { Event, getEvents } from "@/services/eventService";
-
-const SCREEN_HEIGHT = Dimensions.get("window").height;
-
-// Sheet is fully hidden below the screen until the user starts searching,
-// then it slides up to exactly half the screen height.
-const SHEET_HEIGHT = SCREEN_HEIGHT * 0.5;
-
 export default function SearchScreen() {
   const [search, setSearch] = useState("");
   const [events, setEvents] = useState<Event[]>([]);
@@ -49,21 +40,11 @@ export default function SearchScreen() {
   const isExpanded = isFocused || search.trim().length > 0;
 
   // translateY: 0 = visible at half-screen, SHEET_HEIGHT = fully off-screen.
-  const sheetTranslateY = useRef(new Animated.Value(SHEET_HEIGHT)).current;
 
   useEffect(() => {
     loadLocation();
     loadEvents();
   }, []);
-
-  useEffect(() => {
-    Animated.spring(sheetTranslateY, {
-      toValue: isExpanded ? 0 : SHEET_HEIGHT,
-      useNativeDriver: true,
-      tension: 80,
-      friction: 11,
-    }).start();
-  }, [isExpanded]);
 
   // Track keyboard height so the list isn't hidden behind it.
   useEffect(() => {
@@ -156,47 +137,19 @@ export default function SearchScreen() {
     setIsFocused(false);
   };
 
-  const renderEvent = ({ item }: { item: Event }) => {
-    const isSelected = selectedEvent?._id === item._id;
+  const handleOpenMaps = (event: Event) => {
+    const url = `https://www.google.com/maps/search/?api=1&query=${event.latitude},${event.longitude}`;
 
-    return (
-      <TouchableOpacity
-        activeOpacity={0.8}
-        onPress={() => handleSelectEvent(item)}
-        className={`mb-3 rounded-2xl p-4 ${
-          isSelected
-            ? "bg-blue-50 border border-blue-500"
-            : "bg-slate-50 border border-slate-200"
-        }`}
-      >
-        <View className="flex-row justify-between items-start">
-          <View className="flex-1">
-            <Text
-              className="text-base font-semibold text-slate-900"
-              numberOfLines={1}
-            >
-              {item.title}
-            </Text>
+    Linking.openURL(url);
+  };
 
-            <Text className="text-sm text-slate-500 mt-1" numberOfLines={1}>
-              {item.category}
-            </Text>
-          </View>
-
-          {isSelected && (
-            <MaterialIcons name="location-on" size={24} color="#2563EB" />
-          )}
-        </View>
-
-        <View className="flex-row items-center mt-3">
-          <MaterialIcons name="place" size={16} color="#64748B" />
-
-          <Text className="ml-1 flex-1 text-slate-600" numberOfLines={1}>
-            {item.venueName || item.address || "Location unavailable"}
-          </Text>
-        </View>
-      </TouchableOpacity>
-    );
+  const handleBookSlot = (event: Event) => {
+    router.push({
+      pathname: "/book-event/[id]",
+      params: {
+        id: event._id,
+      },
+    });
   };
 
   if (loadingEvents || loadingLocation) {
@@ -270,66 +223,17 @@ export default function SearchScreen() {
       </View>
 
       {/* BOTTOM SHEET — hidden off-screen until expanded, then slides up to half screen */}
-      <Animated.View
-        style={{
-          position: "absolute",
-          left: 0,
-          right: 0,
-          bottom: 0,
-          height: SHEET_HEIGHT,
-          zIndex: 40,
-          transform: [{ translateY: sheetTranslateY }],
-        }}
-      >
-        <View
-          className="flex-1 bg-white rounded-t-[32px] px-5 pt-3"
-          style={{
-            shadowColor: "#000",
-            shadowOpacity: 0.1,
-            shadowRadius: 12,
-            elevation: 12,
-          }}
-        >
-          {/* HANDLE */}
-          <View className="items-center mb-4">
-            <View className="h-1.5 w-12 rounded-full bg-slate-300" />
-          </View>
-
-          {/* HEADER */}
-          <View className="flex-row justify-between items-center mb-4">
-            <Text className="text-xl font-bold text-slate-900">Events</Text>
-
-            <View className="bg-blue-100 px-3 py-1 rounded-full">
-              <Text className="font-medium text-blue-600">
-                {filteredEvents.length}
-              </Text>
-            </View>
-          </View>
-
-          {error ? (
-            <View className="flex-1 justify-center items-center">
-              <Text className="text-red-500">{error}</Text>
-            </View>
-          ) : (
-            <FlatList
-              data={filteredEvents}
-              keyExtractor={(item) => item._id}
-              renderItem={renderEvent}
-              showsVerticalScrollIndicator={false}
-              keyboardShouldPersistTaps="handled"
-              className="flex-1"
-              contentContainerStyle={{
-                paddingBottom: 30 + (isFocused ? keyboardHeight : 0),
-              }}
-              ListEmptyComponent={
-                <View className="items-center py-8">
-                  <Text className="text-slate-500">No events found</Text>
-                </View>
-              }
-            />
-          )}
-        </View>
-      </Animated.View>
+      <EventBottomSheet
+        visible={isExpanded}
+        events={filteredEvents}
+        selectedEvent={selectedEvent}
+        error={error}
+        keyboardHeight={keyboardHeight}
+        isFocused={isFocused}
+        onSelectEvent={handleSelectEvent}
+        onOpenMaps={handleOpenMaps}
+        onBookSlot={handleBookSlot}
+      />
     </SafeAreaView>
   );
 }

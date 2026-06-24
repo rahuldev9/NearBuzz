@@ -4,9 +4,10 @@ import { Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useAuth } from "../../../context/AuthContext";
 
+import { useRouter } from "expo-router";
 export default function ProfileScreen() {
   const { user, signOut, isLoading } = useAuth();
-
+  const router = useRouter();
   return (
     <SafeAreaView className="flex-1 bg-slate-50">
       <View className="items-center pt-10">
@@ -34,6 +35,15 @@ export default function ProfileScreen() {
         <TouchableOpacity className="bg-white rounded-2xl p-4 flex-row items-center mb-3">
           <MaterialIcons name="settings" size={24} />
           <Text className="ml-3">Settings</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          onPress={() => router.push("/my-bookings")}
+          className="bg-white rounded-2xl p-4 flex-row items-center mb-3"
+        >
+          <MaterialIcons name="confirmation-number" size={24} />
+
+          <Text className="ml-3">My Bookings</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
