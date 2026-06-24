@@ -1,5 +1,5 @@
 import ConfirmDialog from "@/Components/ConfirmDialog";
-import { bookEvent, getEvent } from "@/services/eventService";
+import { bookEvent, getEvent, getMyBookings } from "@/services/eventService";
 import { AntDesign, MaterialIcons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
@@ -23,6 +23,7 @@ export default function BookEventScreen() {
   const [loading, setLoading] = useState(true);
   const [booking, setBooking] = useState(false);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  const [existingBooking, setExistingBooking] = useState<any | null>(null);
   useEffect(() => {
     loadEvent();
   }, [id]);
@@ -33,6 +34,18 @@ export default function BookEventScreen() {
 
       const data = await getEvent(id);
       setEvent(data);
+      // check if current user already booked this event
+      try {
+        const mb = await getMyBookings();
+        const found = (mb.bookings || []).find((b: any) => {
+          const bid = b.eventId?._id || b.eventId;
+          return bid === data._id || bid === id;
+        });
+
+        setExistingBooking(found || null);
+      } catch (err) {
+        console.log("Failed to check existing bookings", err);
+      }
     } catch (error) {
       console.log(error);
       Alert.alert("Error", "Unable to load event");
@@ -165,15 +178,32 @@ export default function BookEventScreen() {
 
         <TouchableOpacity
           disabled={booking}
-          onPress={handleBook}
+          onPress={
+            existingBooking
+              ? () => router.push({ pathname: "/my-bookings" })
+              : handleBook
+          }
           className={`mt-8 rounded-2xl py-4 ${
             booking ? "bg-slate-400" : "bg-blue-600"
           }`}
         >
           <Text className="text-center text-white text-lg font-bold">
-            {booking ? "Booking..." : "Book Event"}
+            {booking
+              ? "Booking..."
+              : existingBooking
+                ? "View Booking"
+                : "Book Event"}
           </Text>
         </TouchableOpacity>
+
+        {existingBooking && (
+          <View className="mt-4 px-4 py-3 bg-white rounded-2xl">
+            <Text className="font-semibold">You already booked this event</Text>
+            <Text className="text-slate-600 mt-1">
+              Status: {existingBooking.bookingStatus || "Booked"}
+            </Text>
+          </View>
+        )}
       </ScrollView>
     </SafeAreaView>
   );

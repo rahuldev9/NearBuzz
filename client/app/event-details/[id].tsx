@@ -1,4 +1,12 @@
-import { Event, getEvent, updateEvent } from "@/services/eventService";
+import { useAuth } from "@/context/AuthContext";
+import {
+  Booking,
+  Event,
+  deleteBooking,
+  getEvent,
+  getEventBookings,
+  updateEvent,
+} from "@/services/eventService";
 import { AntDesign, MaterialIcons } from "@expo/vector-icons";
 import * as Location from "expo-location";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -16,6 +24,7 @@ export default function EventDetailsScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
   const id = Array.isArray(params.id) ? params.id[0] : params.id;
+  const { user } = useAuth();
   const [event, setEvent] = useState<Event | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -24,6 +33,13 @@ export default function EventDetailsScreen() {
   );
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [bookings, setBookings] = useState<Booking[]>([]);
+  const [bookingsLoading, setBookingsLoading] = useState(false);
+  const [bookingsError, setBookingsError] = useState<string | null>(null);
+  const [bookingMessage, setBookingMessage] = useState<string | null>(null);
+  const [deletingBookingId, setDeletingBookingId] = useState<string | null>(
+    null,
+  );
 
   useEffect(() => {
     const loadEvent = async () => {
@@ -50,9 +66,68 @@ export default function EventDetailsScreen() {
     loadEvent();
   }, [id]);
 
+  useEffect(() => {
+    if (!event || !user) {
+      return;
+    }
+
+    const eventOwnerId = String(event.userId || "");
+
+    if (eventOwnerId !== user.id) {
+      setBookings([]);
+      setBookingsError(null);
+      return;
+    }
+
+    const loadBookings = async () => {
+      setBookingsLoading(true);
+      setBookingsError(null);
+      setBookingMessage(null);
+
+      try {
+        const data = await getEventBookings(id as string);
+        setBookings(data.bookings || []);
+      } catch (err) {
+        setBookingsError(
+          err instanceof Error ? err.message : "Unable to load event bookings.",
+        );
+      } finally {
+        setBookingsLoading(false);
+      }
+    };
+
+    loadBookings();
+  }, [event, user, id]);
+
   const formattedDate = event?.startDate
     ? new Date(event.startDate).toLocaleString()
     : "";
+
+  const isEventOwner =
+    !!event && !!user && String(event.userId || "") === user.id;
+
+  const handleDeleteBooking = async (bookingId: string) => {
+    if (!bookingId || deletingBookingId) {
+      return;
+    }
+
+    setDeletingBookingId(bookingId);
+    setBookingMessage(null);
+
+    try {
+      await deleteBooking(bookingId);
+      setBookings((prev) => prev.filter((item) => item._id !== bookingId));
+      setBookingMessage("Booking deleted successfully.");
+    } catch (err) {
+      setBookingMessage(
+        err instanceof Error
+          ? err.message
+          : "Unable to delete booking. Please try again.",
+      );
+    } finally {
+      setDeletingBookingId(null);
+    }
+  };
 
   const handleStatusChange = async (
     selectedStatus: "Scheduled" | "Live" | "Closed",
@@ -257,6 +332,140 @@ export default function EventDetailsScreen() {
             </View>
           </View>
         )}
+        {isEventOwner ? (
+          <View className="mt-6 bg-slate-50 rounded-3xl p-5 shadow-sm">
+            <Text className="text-lg font-bold text-slate-900 mb-4">
+              Event Bookings
+            </Text>
+
+            {bookingsLoading ? (
+              <View className="items-center py-8">
+                <ActivityIndicator size="large" color="#2563EB" />
+              </View>
+            ) : bookingsError ? (
+              <View className="rounded-3xl bg-red-50 p-4">
+                <Text className="text-red-700 text-center">
+                  {bookingsError}
+                </Text>
+              </View>
+            ) : bookings.length === 0 ? (
+              <View className="rounded-3xl bg-white p-4">
+                <Text className="text-slate-600 text-center">
+                  No bookings yet for this event.
+                </Text>
+              </View>
+            ) : (
+              <View className="mt-4 rounded-3xl bg-white overflow-hidden">
+                <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                  <View>
+                    {/* Table Header */}
+                    <View className="flex-row bg-slate-100 border-b border-slate-200">
+                      <Text className="w-40 px-4 py-3 font-bold text-slate-800">
+                        Name
+                      </Text>
+                      <Text className="w-56 px-4 py-3 font-bold text-slate-800">
+                        Email
+                      </Text>
+                      <Text className="w-28 px-4 py-3 font-bold text-slate-800">
+                        QR Status
+                      </Text>
+                      <Text className="w-32 px-4 py-3 font-bold text-slate-800">
+                        Booking
+                      </Text>
+                      <Text className="w-44 px-4 py-3 font-bold text-slate-800">
+                        Date
+                      </Text>
+                      <Text className="w-28 px-4 py-3 font-bold text-slate-800">
+                        Action
+                      </Text>
+                    </View>
+
+                    {/* Table Rows */}
+                    {bookings.map((booking, index) => {
+                      const attendeeName =
+                        typeof booking.userId === "object"
+                          ? booking.userId.name || booking.userId.email
+                          : booking.userEmail;
+
+                      return (
+                        <View
+                          key={booking._id}
+                          className={`flex-row border-b border-slate-100 ${
+                            index % 2 === 0 ? "bg-white" : "bg-slate-50"
+                          }`}
+                        >
+                          <Text
+                            numberOfLines={1}
+                            className="w-40 px-4 py-4 text-slate-900 font-medium"
+                          >
+                            {attendeeName}
+                          </Text>
+
+                          <Text
+                            numberOfLines={1}
+                            className="w-56 px-4 py-4 text-slate-600"
+                          >
+                            {booking.userEmail}
+                          </Text>
+
+                          <View className="w-28 px-4 py-4">
+                            <View
+                              className={`rounded-full px-3 py-1 self-start ${
+                                booking.qrStatus === "Expired"
+                                  ? "bg-red-100"
+                                  : "bg-green-100"
+                              }`}
+                            >
+                              <Text
+                                className={`text-xs font-semibold ${
+                                  booking.qrStatus === "Expired"
+                                    ? "text-red-700"
+                                    : "text-green-700"
+                                }`}
+                              >
+                                {booking.qrStatus}
+                              </Text>
+                            </View>
+                          </View>
+
+                          <Text className="w-32 px-4 py-4 text-slate-600">
+                            {booking.bookingStatus}
+                          </Text>
+
+                          <Text className="w-44 px-4 py-4 text-slate-500 text-xs">
+                            {new Date(booking.createdAt).toLocaleDateString()}
+                          </Text>
+
+                          <View className="w-28 px-4 py-3">
+                            <TouchableOpacity
+                              disabled={deletingBookingId === booking._id}
+                              onPress={() => handleDeleteBooking(booking._id)}
+                              className="bg-red-600 rounded-xl py-2"
+                            >
+                              <Text className="text-center text-white font-semibold text-sm">
+                                {deletingBookingId === booking._id
+                                  ? "Deleting..."
+                                  : "Delete"}
+                              </Text>
+                            </TouchableOpacity>
+                          </View>
+                        </View>
+                      );
+                    })}
+                  </View>
+                </ScrollView>
+              </View>
+            )}
+
+            {bookingMessage ? (
+              <View className="mt-4 rounded-3xl bg-blue-50 p-4">
+                <Text className="text-blue-700 text-sm text-center">
+                  {bookingMessage}
+                </Text>
+              </View>
+            ) : null}
+          </View>
+        ) : null}
       </ScrollView>
     </SafeAreaView>
   );
