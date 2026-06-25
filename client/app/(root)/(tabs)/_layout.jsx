@@ -1,9 +1,9 @@
 import { MaterialIcons } from "@expo/vector-icons";
 import { Redirect, Tabs } from "expo-router";
+import { Image } from "react-native";
 import { useAuth } from "../../../context/AuthContext";
-
 export default function TabLayout() {
-  const { isAuthenticated, isInitializing } = useAuth();
+  const { user, isAuthenticated, isInitializing } = useAuth();
 
   if (isInitializing) {
     return null;
@@ -59,9 +59,19 @@ export default function TabLayout() {
         name="profile"
         options={{
           title: "Profile",
-          tabBarIcon: ({ color, size }) => (
-            <MaterialIcons name="person" size={size} color={color} />
-          ),
+          tabBarIcon: ({ color, size, focused }) =>
+            user?.profileImage ? (
+              <Image
+                source={{ uri: user.profileImage }}
+                className="rounded-full"
+                style={{
+                  width: size + 6,
+                  height: size + 6,
+                }}
+              />
+            ) : (
+              <MaterialIcons name="person" size={size} color={color} />
+            ),
         }}
       />
     </Tabs>

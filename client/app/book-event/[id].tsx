@@ -184,7 +184,7 @@ export default function BookEventScreen() {
               : handleBook
           }
           className={`mt-8 rounded-2xl py-4 ${
-            booking ? "bg-slate-400" : "bg-blue-600"
+            booking ? "bg-blue-900" : "bg-blue-800"
           }`}
         >
           <Text className="text-center text-white text-lg font-bold">

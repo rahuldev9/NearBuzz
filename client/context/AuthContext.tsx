@@ -58,6 +58,7 @@ export type AuthUser = {
   name: string;
   email: string;
   role: string;
+  profileImage?: string;
 };
 
 type PendingRegistration = {
@@ -81,6 +82,8 @@ type AuthContextValue = {
   confirmSignUp: (otp: string, password: string) => Promise<void>;
 
   signOut: () => Promise<void>;
+
+  setUser: React.Dispatch<React.SetStateAction<AuthUser | null>>;
 };
 
 /* ===========================
@@ -375,12 +378,16 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       isInitializing,
       isLoading,
       error,
+
       signIn,
       signUp,
       requestSignUpOtp,
       verifySignUpOtp,
       confirmSignUp,
+
       signOut,
+
+      setUser,
     }),
     [user, pendingRegistration, isInitializing, isLoading, error],
   );

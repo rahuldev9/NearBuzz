@@ -288,7 +288,7 @@ export default function EventDetailsScreen() {
             {/* Scan QR Button */}
             <TouchableOpacity
               onPress={() => router.push("/scan-qr")}
-              className="bg-blue-600 rounded-2xl p-4 mt-6 flex-row items-center justify-center"
+              className="bg-blue-800 active:bg-blue-900 rounded-2xl p-4 mt-6 flex-row items-center justify-center"
             >
               <MaterialIcons name="qr-code-scanner" size={22} color="white" />
 

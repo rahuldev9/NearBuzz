@@ -2,7 +2,9 @@ import QRCode from "qrcode";
 
 import Event from "../models/Event.js";
 import EventBooking from "../models/EventBooking.js";
+import Notification from "../models/Notification.js";
 import User from "../models/User.js";
+import { createNotification } from "../services/notification.service.js";
 
 export const bookEvent = async (req, res) => {
   try {
@@ -46,6 +48,30 @@ export const bookEvent = async (req, res) => {
       userEmail: user.email,
       qrCode: "pending",
     });
+
+    await Promise.all([
+      createNotification({
+        userId: booking.userId,
+        eventId: event._id,
+        bookingId: booking._id,
+        title: "Booking Confirmed 🎉",
+        message: `Your booking for "${event.title}" has been confirmed.`,
+        type: "booking",
+      }),
+
+      ...(event.userId.toString() !== booking.userId.toString()
+        ? [
+            createNotification({
+              userId: event.userId,
+              eventId: event._id,
+              bookingId: booking._id,
+              title: "New Booking 🎟️",
+              message: `${user.name} booked your event "${event.title}".`,
+              type: "booking",
+            }),
+          ]
+        : []),
+    ]);
 
     // Create QR payload
     const qrPayload = JSON.stringify({
@@ -187,6 +213,17 @@ export const deleteBooking = async (req, res) => {
         message: "Not authorized to delete this booking",
       });
     }
+    await Notification.deleteMany({
+      $or: [
+        {
+          "data.bookingId": booking._id,
+        },
+        {
+          eventId: booking.eventId._id,
+          userId: booking.userId,
+        },
+      ],
+    });
 
     await booking.deleteOne();
 
@@ -216,6 +253,28 @@ export const checkInBooking = async (req, res) => {
     booking.bookingStatus = "CheckedIn";
 
     await booking.save();
+
+    await Promise.all([
+      // Notification to attendee
+      createNotification({
+        userId: booking.userId._id,
+        eventId: booking.eventId._id,
+        bookingId: booking._id,
+        title: "Check-in Successful ✅",
+        message: `You have successfully checked in to "${booking.eventId.title}".`,
+        type: "checkin",
+      }),
+
+      // Notification to event organizer
+      createNotification({
+        userId: booking.eventId.userId,
+        eventId: booking.eventId._id,
+        bookingId: booking._id,
+        title: "Attendee Checked In 👤",
+        message: `${booking.userId.name} has checked in for "${booking.eventId.title}".`,
+        type: "checkin",
+      }),
+    ]);
 
     res.json({
       success: true,
@@ -264,6 +323,28 @@ export const verifyBooking = async (req, res) => {
     booking.checkedInAt = new Date();
 
     await booking.save();
+
+    await Promise.all([
+      // Notification to attendee
+      createNotification({
+        userId: booking.userId._id,
+        eventId: booking.eventId._id,
+        bookingId: booking._id,
+        title: "Check-in Successful ✅",
+        message: `Your check-in for "${booking.eventId.title}" was verified successfully.`,
+        type: "checkin",
+      }),
+
+      // Notification to organizer
+      createNotification({
+        userId: booking.eventId.userId,
+        eventId: booking.eventId._id,
+        bookingId: booking._id,
+        title: "Attendee Verified 🎉",
+        message: `${booking.userId.name} has successfully checked in to "${booking.eventId.title}".`,
+        type: "checkin",
+      }),
+    ]);
 
     res.json({
       success: true,

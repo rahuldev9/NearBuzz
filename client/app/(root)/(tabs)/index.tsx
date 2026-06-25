@@ -43,7 +43,7 @@ export default function HomeScreen() {
             />
           </View>
 
-          <TouchableOpacity className="bg-blue-600 h-14 rounded-2xl items-center justify-center mt-4">
+          <TouchableOpacity className="bg-blue-800 active:bg-blue-900 h-14 rounded-2xl items-center justify-center mt-4">
             <Text className="text-white font-semibold text-base">Search</Text>
           </TouchableOpacity>
         </View>
