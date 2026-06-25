@@ -1,6 +1,6 @@
 import Event from "../models/Event.js";
 import EventBooking from "../models/EventBooking.js";
-
+import Notification from "../models/Notification.js";
 export const createEvent = async (req, res) => {
   try {
     const { status, venueName, address, latitude, longitude } = req.body;
@@ -103,8 +103,32 @@ export const deleteEvent = async (req, res) => {
       });
     }
     // Delete all bookings related to this event
-    await EventBooking.deleteMany({ eventId: event._id });
+    const bookings = await EventBooking.find({
+      eventId: event._id,
+    }).select("_id");
 
+    // Delete booking notifications
+    if (bookings.length > 0) {
+      const bookingIds = bookings.map((b) => b._id);
+
+      await Notification.deleteMany({
+        "data.bookingId": {
+          $in: bookingIds,
+        },
+      });
+    }
+
+    // Delete event notifications
+    await Notification.deleteMany({
+      eventId: event._id,
+    });
+
+    // Delete bookings
+    await EventBooking.deleteMany({
+      eventId: event._id,
+    });
+
+    // Delete event
     await event.deleteOne();
 
     res.json({

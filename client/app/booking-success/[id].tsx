@@ -1,6 +1,7 @@
 import { AntDesign } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
+import { MdOutlineDone } from "react-icons/md";
 import {
   ActivityIndicator,
   Image,
@@ -69,7 +70,7 @@ export default function BookingSuccessScreen() {
         }}
       >
         <View className="h-24 w-24 rounded-full bg-green-100 items-center justify-center">
-          <AntDesign name="check" size={50} color="#16A34A" />
+          <MdOutlineDone size={46} color="#16A34A" />
         </View>
 
         <Text className="text-3xl font-bold text-slate-900 mt-6">
@@ -117,12 +118,12 @@ export default function BookingSuccessScreen() {
           <Text className="font-medium">{booking.userEmail}</Text>
         </View>
 
-        <TouchableOpacity
+        {/* <TouchableOpacity
           onPress={() => router.replace("/")}
           className="bg-blue-600 rounded-2xl py-4 px-10 mt-8"
         >
           <Text className="text-white font-bold">Back to Home</Text>
-        </TouchableOpacity>
+        </TouchableOpacity> */}
       </ScrollView>
     </SafeAreaView>
   );

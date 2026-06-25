@@ -21,6 +21,7 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { toast } from "sonner";
 
 interface FormErrors {
   title?: string;
@@ -77,7 +78,7 @@ export default function EventPostingScreen() {
     }
   };
 
-  const validateForm = (): boolean => {
+  const validateForm = (): FormErrors => {
     const newErrors: FormErrors = {};
 
     if (!title.trim()) newErrors.title = "Event title is required.";
@@ -96,16 +97,27 @@ export default function EventPostingScreen() {
     }
 
     setErrors(newErrors);
+    return newErrors;
+  };
 
-    // Returns true only if errors object is empty
-    return Object.keys(newErrors).length === 0;
+  const getFirstValidationError = (errors: FormErrors): string | null => {
+    if (errors.title) return errors.title;
+    if (errors.description) return errors.description;
+    if (errors.category) return errors.category;
+    if (errors.venue) return errors.venue;
+    if (errors.address) return errors.address;
+    if (errors.date) return errors.date;
+    if (errors.time) return errors.time;
+    return null;
   };
 
   const handlePublish = async () => {
     setStatusMessage(null);
 
-    if (!validateForm()) {
-      console.log("Validation failed:", errors); // Debug log 2
+    const formErrors = validateForm();
+    const firstError = getFirstValidationError(formErrors);
+    if (firstError) {
+      toast.error(firstError);
       return;
     }
 
@@ -290,11 +302,11 @@ export default function EventPostingScreen() {
             }}
             className={`border rounded-xl px-4 py-3 ${errors.title ? "border-red-500 bg-red-50/30" : "border-slate-300"}`}
           />
-          {errors.title && (
+          {/* {errors.title && (
             <Text className="text-red-500 text-xs mt-1 ml-1">
               {errors.title}
             </Text>
-          )}
+          )} */}
 
           {/* Description */}
           <Text className="font-semibold mt-5 mb-2">Description</Text>
@@ -310,11 +322,11 @@ export default function EventPostingScreen() {
             }}
             className={`border rounded-xl px-4 py-3 h-28 ${errors.description ? "border-red-500 bg-red-50/30" : "border-slate-300"}`}
           />
-          {errors.description && (
+          {/* {errors.description && (
             <Text className="text-red-500 text-xs mt-1 ml-1">
               {errors.description}
             </Text>
-          )}
+          )} */}
 
           {/* Category */}
           <Text className="font-semibold mt-5 mb-2">Category</Text>
@@ -327,11 +339,11 @@ export default function EventPostingScreen() {
             }}
             className={`border rounded-xl px-4 py-3 ${errors.category ? "border-red-500 bg-red-50/30" : "border-slate-300"}`}
           />
-          {errors.category && (
+          {/* {errors.category && (
             <Text className="text-red-500 text-xs mt-1 ml-1">
               {errors.category}
             </Text>
-          )}
+          )} */}
 
           <Text className="font-semibold mt-5 mb-2">Date</Text>
 
@@ -450,11 +462,11 @@ export default function EventPostingScreen() {
             }}
             className={`border rounded-xl px-4 py-3 ${errors.venue ? "border-red-500 bg-red-50/30" : "border-slate-300"}`}
           />
-          {errors.venue && (
+          {/* {errors.venue && (
             <Text className="text-red-500 text-xs mt-1 ml-1">
               {errors.venue}
             </Text>
-          )}
+          )} */}
 
           {/* Address */}
           <Text className="font-semibold mt-5 mb-2">Address</Text>
@@ -467,11 +479,11 @@ export default function EventPostingScreen() {
             }}
             className={`border rounded-xl px-4 py-3 ${errors.address ? "border-red-500 bg-red-50/30" : "border-slate-300"}`}
           />
-          {errors.address && (
+          {/* {errors.address && (
             <Text className="text-red-500 text-xs mt-1 ml-1">
               {errors.address}
             </Text>
-          )}
+          )} */}
 
           {/* Status Message */}
           {statusMessage ? (
@@ -482,7 +494,7 @@ export default function EventPostingScreen() {
           <TouchableOpacity
             disabled={loading}
             onPress={handlePublish}
-            className={`rounded-2xl py-4 mt-8 ${loading ? "bg-slate-400" : "bg-blue-600"}`}
+            className={`rounded-2xl py-4 mt-8 ${loading ? "bg-blue-900" : "bg-blue-800"}`}
           >
             <View className="flex-row items-center justify-center gap-2">
               <Text className="text-center text-white font-bold text-lg">
