@@ -59,6 +59,7 @@ export type AuthUser = {
   email: string;
   role: string;
   profileImage?: string;
+  phone?: string;
 };
 
 type PendingRegistration = {

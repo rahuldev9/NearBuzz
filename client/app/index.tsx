@@ -1,35 +1,20 @@
+import AppLoader from "@/Components/AppLoader";
 import { useAuth } from "@/context/AuthContext";
-import { useRouter } from "expo-router";
-import React, { useEffect } from "react";
-import {
-  ActivityIndicator,
-  Image,
-  Pressable,
-  ScrollView,
-  Text,
-  View,
-} from "react-native";
+import { Redirect, useRouter } from "expo-router";
+import React from "react";
+import { Image, Pressable, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 export default function Index() {
   const router = useRouter();
-  const { signIn, isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isInitializing } = useAuth();
 
-  useEffect(() => {
-    if (isAuthenticated) {
-      router.replace("/(root)/(tabs)");
-    }
-  }, [isAuthenticated]);
-
-  if (isLoading) {
-    return (
-      <SafeAreaView className="flex-1 ">
-        <View className="flex-1 justify-center items-center">
-          <ActivityIndicator size="large" />
-        </View>
-      </SafeAreaView>
-    );
+  if (isInitializing) {
+    return <AppLoader />;
   }
 
+  if (isAuthenticated) {
+    return <Redirect href="/(root)/(tabs)" />;
+  }
   const features = [
     {
       icon: "📍",

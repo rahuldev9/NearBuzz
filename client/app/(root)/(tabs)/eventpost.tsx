@@ -7,12 +7,15 @@ import {
 } from "@/services/eventService";
 import { AntDesign, MaterialIcons } from "@expo/vector-icons";
 import DateTimePicker from "@react-native-community/datetimepicker";
+import * as ImagePicker from "expo-image-picker";
 import * as Location from "expo-location";
 import { useRouter } from "expo-router";
+import { useColorScheme } from "nativewind";
 import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
+  Image,
   Platform,
   ScrollView,
   Text,
@@ -22,7 +25,6 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { toast } from "sonner";
-
 interface FormErrors {
   title?: string;
   description?: string;
@@ -31,10 +33,12 @@ interface FormErrors {
   time?: string;
   venue?: string;
   address?: string;
+  image?: string;
 }
 
 export default function EventPostingScreen() {
   const router = useRouter();
+  const { colorScheme } = useColorScheme();
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [category, setCategory] = useState("");
@@ -54,7 +58,7 @@ export default function EventPostingScreen() {
   const [showConfirm, setShowConfirm] = useState(false);
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
   const [isEditing, setIsEditing] = useState(false);
-
+  const [image, setImage] = useState("");
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   useEffect(() => {
     loadEvents();
@@ -111,6 +115,29 @@ export default function EventPostingScreen() {
     return null;
   };
 
+  const pickImage = async () => {
+    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+
+    if (!permission.granted) {
+      alert("Permission to access photos is required.");
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ["images"],
+      allowsEditing: true,
+      aspect: [16, 9],
+      quality: 0.8,
+      base64: true,
+    });
+
+    if (!result.canceled) {
+      const asset = result.assets[0];
+
+      // Save as Base64 Data URL
+      setImage(`data:${asset.mimeType};base64,${asset.base64}`);
+    }
+  };
   const handlePublish = async () => {
     setStatusMessage(null);
 
@@ -199,6 +226,7 @@ export default function EventPostingScreen() {
         longitude,
         venueName: venue,
         address,
+        image,
         startDate: isoTimestamp,
         endDate: isoTimestamp,
       };
@@ -224,6 +252,7 @@ export default function EventPostingScreen() {
       setDate("");
       setTime("");
       setStatus("Scheduled");
+      setImage("");
       setErrors({});
     } catch (error) {
       console.error("API Error caught:", error);
@@ -269,7 +298,7 @@ export default function EventPostingScreen() {
     setVenue(event.venueName || "");
     setAddress(event.address || "");
     setStatus(event.status || "Scheduled");
-
+    setImage(event.image || "");
     const date = new Date(event.startDate);
 
     setDate(date.toISOString().split("T")[0]);
@@ -282,17 +311,22 @@ export default function EventPostingScreen() {
     setIsEditing(true);
   };
   return (
-    <SafeAreaView className="flex-1 bg-slate-50">
-      <ScrollView className="flex-1 px-5" showsVerticalScrollIndicator={false}>
-        <Text className="text-3xl font-bold text-slate-900 mt-4">
+    <SafeAreaView className="flex-1 ">
+      <ScrollView
+        className="flex-1 px-5 bg-white dark:bg-neutral-900"
+        showsVerticalScrollIndicator={false}
+      >
+        <Text className="text-3xl font-bold dark:text-slate-200 mt-4">
           Create Event
         </Text>
-        <Text className="text-slate-500 mt-1">
+        <Text className="dark:text-slate-200 mt-1">
           Discover what's buzzing near you
         </Text>
-        <View className="bg-white rounded-3xl p-5 mt-6">
+        <View className=" rounded-3xl p-5 mt-6">
           {/* Event Title */}
-          <Text className="font-semibold mb-2">Event Title</Text>
+          <Text className="font-semibold dark:text-slate-200 mb-2">
+            Event Title
+          </Text>
           <TextInput
             placeholder="Startup Meetup 2026"
             value={title}
@@ -300,7 +334,7 @@ export default function EventPostingScreen() {
               setTitle(val);
               clearError("title");
             }}
-            className={`border rounded-xl px-4 py-3 ${errors.title ? "border-red-500 bg-red-50/30" : "border-slate-300"}`}
+            className={`border rounded-xl px-4 py-3 dark:text-slate-200 ${errors.title ? "border-red-500 bg-red-50/30" : "border-slate-300"}`}
           />
           {/* {errors.title && (
             <Text className="text-red-500 text-xs mt-1 ml-1">
@@ -309,7 +343,9 @@ export default function EventPostingScreen() {
           )} */}
 
           {/* Description */}
-          <Text className="font-semibold mt-5 mb-2">Description</Text>
+          <Text className="font-semibold mt-5 mb-2 dark:text-slate-200">
+            Description
+          </Text>
           <TextInput
             multiline
             numberOfLines={4}
@@ -320,7 +356,7 @@ export default function EventPostingScreen() {
               setDescription(val);
               clearError("description");
             }}
-            className={`border rounded-xl px-4 py-3 h-28 ${errors.description ? "border-red-500 bg-red-50/30" : "border-slate-300"}`}
+            className={`border rounded-xl dark:text-slate-200 px-4 py-3 h-28 ${errors.description ? "border-red-500 bg-red-50/30" : "border-slate-300"}`}
           />
           {/* {errors.description && (
             <Text className="text-red-500 text-xs mt-1 ml-1">
@@ -329,7 +365,9 @@ export default function EventPostingScreen() {
           )} */}
 
           {/* Category */}
-          <Text className="font-semibold mt-5 mb-2">Category</Text>
+          <Text className="font-semibold mt-5 mb-2 dark:text-slate-200">
+            Category
+          </Text>
           <TextInput
             placeholder="Technology"
             value={category}
@@ -337,7 +375,7 @@ export default function EventPostingScreen() {
               setCategory(val);
               clearError("category");
             }}
-            className={`border rounded-xl px-4 py-3 ${errors.category ? "border-red-500 bg-red-50/30" : "border-slate-300"}`}
+            className={`border rounded-xl px-4 py-3 dark:text-slate-200 ${errors.category ? "border-red-500 bg-red-50/30" : "border-slate-300"}`}
           />
           {/* {errors.category && (
             <Text className="text-red-500 text-xs mt-1 ml-1">
@@ -345,7 +383,9 @@ export default function EventPostingScreen() {
             </Text>
           )} */}
 
-          <Text className="font-semibold mt-5 mb-2">Date</Text>
+          <Text className="font-semibold mt-5 mb-2 dark:text-slate-200">
+            Date
+          </Text>
 
           {Platform.OS === "web" ? (
             <input
@@ -353,9 +393,13 @@ export default function EventPostingScreen() {
               value={date}
               onChange={(e) => setDate(e.target.value)}
               style={{
-                padding: 12,
-                borderRadius: 12,
-                border: "1px solid #CBD5E1",
+                padding: "12px",
+                borderRadius: "12px",
+                border: `1px solid ${
+                  colorScheme === "dark" ? "#404040" : "#CBD5E1"
+                }`,
+                color: colorScheme === "dark" ? "#fff" : "#000",
+                backgroundColor: colorScheme === "dark" ? "#171717" : "#fff",
                 width: "100%",
               }}
             />
@@ -363,13 +407,19 @@ export default function EventPostingScreen() {
             <>
               <TouchableOpacity
                 onPress={() => setShowDatePicker(true)}
-                className={`border rounded-xl px-4 py-4 ${
+                className={`border rounded-xl px-4 py-4 dark:text-slate-200 ${
                   errors.date
                     ? "border-red-500 bg-red-50/30"
                     : "border-slate-300"
                 }`}
               >
-                <Text className={date ? "text-slate-900" : "text-slate-400"}>
+                <Text
+                  className={
+                    date
+                      ? "text-slate-900 dark:text-slate-200"
+                      : "text-slate-400 dark:text-slate-200"
+                  }
+                >
                   {date || "Select Date"}
                 </Text>
               </TouchableOpacity>
@@ -401,7 +451,9 @@ export default function EventPostingScreen() {
           )}
           {/* Time */}
           {/* Time */}
-          <Text className="font-semibold mt-5 mb-2">Time</Text>
+          <Text className="font-semibold mt-5 mb-2 dark:text-slate-200">
+            Time
+          </Text>
 
           {Platform.OS === "web" ? (
             <input
@@ -413,10 +465,14 @@ export default function EventPostingScreen() {
               }}
               style={{
                 width: "100%",
-                padding: 14,
-                borderRadius: 12,
-                border: errors.time ? "1px solid #ef4444" : "1px solid #cbd5e1",
+                padding: "14px",
+                borderRadius: "12px",
+                border: errors.time
+                  ? "1px solid #ef4444"
+                  : `1px solid ${colorScheme === "dark" ? "#404040" : "#CBD5E1"}`,
                 outline: "none",
+                backgroundColor: colorScheme === "dark" ? "#171717" : "#ffffff",
+                color: colorScheme === "dark" ? "#ffffff" : "#000000",
               }}
             />
           ) : (
@@ -452,7 +508,9 @@ export default function EventPostingScreen() {
             </>
           )}
           {/* Venue */}
-          <Text className="font-semibold mt-5 mb-2">Venue</Text>
+          <Text className="font-semibold mt-5 mb-2 dark:text-slate-200">
+            Venue
+          </Text>
           <TextInput
             placeholder="Jio Convention Centre"
             value={venue}
@@ -460,7 +518,7 @@ export default function EventPostingScreen() {
               setVenue(val);
               clearError("venue");
             }}
-            className={`border rounded-xl px-4 py-3 ${errors.venue ? "border-red-500 bg-red-50/30" : "border-slate-300"}`}
+            className={`border rounded-xl px-4 py-3 dark:text-slate-200 ${errors.venue ? "border-red-500 bg-red-50/30" : "border-slate-300"}`}
           />
           {/* {errors.venue && (
             <Text className="text-red-500 text-xs mt-1 ml-1">
@@ -469,7 +527,9 @@ export default function EventPostingScreen() {
           )} */}
 
           {/* Address */}
-          <Text className="font-semibold mt-5 mb-2">Address</Text>
+          <Text className="font-semibold mt-5 mb-2 dark:text-slate-200">
+            Address
+          </Text>
           <TextInput
             placeholder="BKC, Mumbai"
             value={address}
@@ -477,7 +537,7 @@ export default function EventPostingScreen() {
               setAddress(val);
               clearError("address");
             }}
-            className={`border rounded-xl px-4 py-3 ${errors.address ? "border-red-500 bg-red-50/30" : "border-slate-300"}`}
+            className={`border rounded-xl px-4 py-3 dark:text-slate-200 ${errors.address ? "border-red-500 bg-red-50/30" : "border-slate-300"}`}
           />
           {/* {errors.address && (
             <Text className="text-red-500 text-xs mt-1 ml-1">
@@ -488,6 +548,26 @@ export default function EventPostingScreen() {
           {/* Status Message */}
           {statusMessage ? (
             <Text className="text-sm text-slate-500 mb-4">{statusMessage}</Text>
+          ) : null}
+          <Text className="font-semibold mt-5 mb-2 dark:text-slate-200">
+            Uplad Event Image
+          </Text>
+          <TouchableOpacity
+            onPress={pickImage}
+            className="bg-blue-600 rounded-2xl py-3 px-5 flex-row items-center justify-center"
+          >
+            <MaterialIcons name="photo-library" size={20} color="#fff" />
+
+            <Text className="text-white font-semibold ml-2">
+              Select Event Image
+            </Text>
+          </TouchableOpacity>
+          {image ? (
+            <Image
+              source={{ uri: image }}
+              className="w-full h-52 rounded-2xl mt-4"
+              resizeMode="cover"
+            />
           ) : null}
 
           {/* Publish Button */}
@@ -523,11 +603,13 @@ export default function EventPostingScreen() {
           />
         )}
         {/* Preview Card */}
-        <Text className="text-2xl font-bold mt-8 mb-4">My Events</Text>
+        <Text className="text-2xl font-bold mt-8 mb-4 dark:text-slate-200">
+          My Events
+        </Text>
 
         {events.length === 0 ? (
-          <View className="bg-white rounded-3xl p-6 mb-10">
-            <Text className="text-center text-slate-500">
+          <View className=" rounded-3xl p-6 mb-10">
+            <Text className="text-center dark:text-slate-200">
               No events posted yet
             </Text>
           </View>
@@ -536,59 +618,108 @@ export default function EventPostingScreen() {
             <TouchableOpacity
               key={event._id}
               disabled={loading}
-              activeOpacity={0.85}
+              activeOpacity={0.9}
               onPress={() =>
                 router.push({
                   pathname: "/event-details/[id]",
                   params: { id: event._id },
                 })
               }
-              className="bg-white rounded-3xl p-5 mb-4"
+              className="mb-6 rounded-3xl overflow-hidden bg-white dark:bg-neutral-800 shadow-lg"
             >
-              <View className="flex-row items-center">
-                <MaterialIcons name="event" size={24} color="#2563EB" />
-
-                <Text className="text-lg font-bold ml-3 flex-1">
-                  {event.title}
-                </Text>
-                <View className="flex-row items-center gap-3">
-                  <TouchableOpacity
-                    disabled={loading}
-                    onPress={() => {
-                      setSelectedEventId(event._id);
-                      setShowConfirm(true);
-                    }}
-                  >
-                    <AntDesign name="delete" size={18} color="red" />
-                  </TouchableOpacity>
-
-                  <TouchableOpacity
-                    disabled={loading}
-                    onPress={() => handleEditEvent(event)}
-                  >
-                    <AntDesign name="edit" size={18} color="#2563EB" />
-                  </TouchableOpacity>
+              {/* Event Image */}
+              {event.image ? (
+                <Image
+                  source={{ uri: event.image }}
+                  className="w-full h-52"
+                  resizeMode="cover"
+                />
+              ) : (
+                <View className="w-full h-52 bg-slate-200 dark:bg-neutral-700 justify-center items-center">
+                  <MaterialIcons name="event" size={60} color="#2563EB" />
                 </View>
-              </View>
+              )}
 
-              <Text className="text-slate-500 mt-1">{event.category}</Text>
+              {/* Card Content */}
+              <View className="p-5">
+                {/* Title + Actions */}
+                <View className="flex-row items-start">
+                  <View className="flex-1">
+                    <Text className="text-xl font-bold dark:text-slate-100">
+                      {event.title}
+                    </Text>
 
-              <Text className="mt-2 text-slate-700" numberOfLines={2}>
-                {event.description}
-              </Text>
+                    <View className="self-start mt-2 bg-blue-100 dark:bg-blue-900 rounded-full px-3 py-1">
+                      <Text className="text-blue-700 dark:text-blue-300 text-xs font-semibold">
+                        {event.category}
+                      </Text>
+                    </View>
+                  </View>
 
-              <View className="flex-row items-center mt-3">
-                <MaterialIcons name="location-on" size={16} color="#64748B" />
+                  <View className="flex-row gap-4">
+                    <TouchableOpacity
+                      disabled={loading}
+                      onPress={() => {
+                        setSelectedEventId(event._id);
+                        setShowConfirm(true);
+                      }}
+                    >
+                      <AntDesign name="delete" size={20} color="#EF4444" />
+                    </TouchableOpacity>
 
-                <Text className="ml-1 text-slate-600">{event.venueName}</Text>
-              </View>
+                    <TouchableOpacity
+                      disabled={loading}
+                      onPress={() => handleEditEvent(event)}
+                    >
+                      <AntDesign name="edit" size={20} color="#2563EB" />
+                    </TouchableOpacity>
+                  </View>
+                </View>
 
-              <View className="flex-row items-center mt-2">
-                <MaterialIcons name="schedule" size={16} color="#64748B" />
-
-                <Text className="ml-1 text-slate-600">
-                  {new Date(event.startDate).toLocaleDateString()}
+                {/* Description */}
+                <Text
+                  numberOfLines={3}
+                  className="mt-4 text-slate-600 dark:text-slate-300 leading-6"
+                >
+                  {event.description}
                 </Text>
+
+                {/* Venue */}
+                <View className="flex-row items-center mt-5">
+                  <MaterialIcons
+                    name="location-on"
+                    size={18}
+                    color={colorScheme === "dark" ? "#CBD5E1" : "#64748B"}
+                  />
+
+                  <Text className="ml-2 flex-1 text-slate-700 dark:text-slate-200">
+                    {event.venueName}
+                  </Text>
+                </View>
+
+                {/* Date */}
+                <View className="flex-row items-center mt-3">
+                  <MaterialIcons
+                    name="schedule"
+                    size={18}
+                    color={colorScheme === "dark" ? "#CBD5E1" : "#64748B"}
+                  />
+
+                  <Text className="ml-2 text-slate-700 dark:text-slate-200">
+                    {new Date(event.startDate).toLocaleDateString()} •{" "}
+                    {new Date(event.startDate).toLocaleTimeString([], {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
+                  </Text>
+                </View>
+
+                {/* Status */}
+                <View className="mt-5 self-start rounded-full bg-green-100 dark:bg-green-900 px-3 py-1">
+                  <Text className="text-green-700 dark:text-green-300 font-semibold text-xs">
+                    {event.status}
+                  </Text>
+                </View>
               </View>
             </TouchableOpacity>
           ))

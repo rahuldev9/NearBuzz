@@ -28,6 +28,15 @@ const userSchema = new mongoose.Schema(
       required: true,
       select: false,
     },
+    phone: {
+      type: String,
+      unique: true,
+      trim: true,
+      match: [
+        /^(\+\d{1,3})?[6-9]\d{9}$/,
+        "Phone must be 10 digits (6-9xxxxxxxxx) or with country code (+CC6-9xxxxxxxxx)",
+      ],
+    },
     profileImage: {
       type: String,
       default: "",

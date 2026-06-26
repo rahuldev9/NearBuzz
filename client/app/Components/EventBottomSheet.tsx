@@ -4,13 +4,14 @@ import {
   Animated,
   Dimensions,
   FlatList,
+  Image,
   Text,
   TouchableOpacity,
   View,
 } from "react-native";
 
 import { Event } from "@/services/eventService";
-
+import { useColorScheme } from "nativewind";
 const SCREEN_HEIGHT = Dimensions.get("window").height;
 const SHEET_HEIGHT = SCREEN_HEIGHT * 0.5;
 
@@ -37,6 +38,7 @@ export default function EventBottomSheet({
   onOpenMaps,
   onBookSlot,
 }: Props) {
+  const { colorScheme } = useColorScheme();
   const translateY = useRef(new Animated.Value(SHEET_HEIGHT)).current;
   const getStatusClasses = (status?: string) => {
     switch (status) {
@@ -79,104 +81,136 @@ export default function EventBottomSheet({
     const isSelected = selectedEvent?._id === item._id;
 
     const statusColors = {
-      Scheduled: "bg-blue-100 text-blue-700",
-      Live: "bg-green-100 text-green-700",
-      Closed: "bg-red-100 text-red-700",
+      Scheduled: " text-white",
+      Live: "text-white",
+      Closed: "text-white",
     };
 
     const statusClass =
       statusColors[item.status as keyof typeof statusColors] ??
-      "bg-slate-100 text-slate-700";
+      "dark:bg-slate-100 text-slate-700";
 
     return (
       <TouchableOpacity
         activeOpacity={0.9}
         onPress={() => onSelectEvent(item)}
-        className={`mb-4 rounded-3xl border p-4 ${
+        className={`mb-3 rounded-2xl overflow-hidden shadow-lg ${
           isSelected
-            ? "border-blue-500 bg-blue-50"
-            : "border-slate-200 bg-white"
+            ? "bg-blue-50 dark:bg-blue-950/30"
+            : "bg-white dark:bg-neutral-900"
         }`}
+        style={{
+          elevation: 6,
+          shadowColor: "#000",
+          shadowOffset: { width: 0, height: 3 },
+          shadowOpacity: 0.1,
+          shadowRadius: 6,
+        }}
       >
-        {/* Header */}
-        <View className="flex-row justify-between items-start">
-          <View className="flex-1 pr-3">
-            <Text
-              className="text-lg font-bold text-slate-900"
-              numberOfLines={2}
-            >
-              {item.title}
-            </Text>
-
-            <Text className="text-sm text-slate-500 mt-1" numberOfLines={1}>
-              {item.category}
-            </Text>
+        {/* Event Image */}
+        {item.image ? (
+          <Image
+            source={{ uri: item.image }}
+            className="w-full h-36"
+            resizeMode="cover"
+          />
+        ) : (
+          <View className="w-full h-36 bg-slate-200 dark:bg-neutral-700 justify-center items-center">
+            <MaterialIcons name="event" size={40} color="#2563EB" />
           </View>
+        )}
 
-          <View className="rounded-full px-3 py-1 bg-slate-100">
-            <Text className={`text-xs font-semibold ${statusClass}`}>
-              {item.status}
-            </Text>
-          </View>
-        </View>
-
-        {/* Description */}
-        <Text className="text-slate-600 mt-3 leading-5" numberOfLines={3}>
-          {item.description}
-        </Text>
-
-        {/* Info Cards */}
-        <View className="mt-4 space-y-3">
-          <View className="flex-row items-center">
-            <MaterialIcons name="calendar-today" size={18} color="#64748B" />
-
-            <Text className="ml-2 flex-1 text-slate-700 text-sm">
-              {new Date(item.startDate).toLocaleDateString()} ·{" "}
-              {new Date(item.startDate).toLocaleTimeString([], {
-                hour: "2-digit",
-                minute: "2-digit",
-              })}
-            </Text>
-          </View>
-
-          <View className="flex-row items-center mt-2">
-            <MaterialIcons name="place" size={18} color="#64748B" />
-
-            <View className="ml-2 flex-1">
-              <Text className="font-medium text-slate-800" numberOfLines={1}>
-                {item.venueName}
+        <View className="p-4">
+          {/* Header */}
+          <View className="flex-row justify-between items-start">
+            <View className="flex-1 pr-2">
+              <Text
+                numberOfLines={1}
+                className="text-base font-bold text-slate-900 dark:text-slate-100"
+              >
+                {item.title}
               </Text>
 
-              <Text className="text-sm text-slate-500" numberOfLines={2}>
-                {item.address}
+              <Text
+                numberOfLines={1}
+                className="text-xs text-slate-500 dark:text-slate-400 mt-1"
+              >
+                {item.category}
+              </Text>
+            </View>
+
+            <View className="bg-blue-100 dark:bg-blue-900 rounded-full px-2.5 py-1">
+              <Text className={`text-[11px] font-semibold ${statusClass}`}>
+                {item.status}
               </Text>
             </View>
           </View>
-        </View>
 
-        {/* Divider */}
-        {/* Divider */}
-        <View className="h-px bg-slate-200 my-4" />
-
-        {/* Actions */}
-        <View className="flex-row gap-3">
-          <TouchableOpacity
-            onPress={() => onOpenMaps(item)}
-            className="flex-1 bg-slate-100 rounded-2xl py-3 flex-row justify-center items-center"
+          {/* Description */}
+          <Text
+            numberOfLines={2}
+            className="mt-3 text-sm text-slate-600 dark:text-slate-300"
           >
-            <MaterialIcons name="map" size={18} color="#475569" />
+            {item.description}
+          </Text>
 
-            <Text className="ml-2 text-slate-700 font-medium">Open Maps</Text>
-          </TouchableOpacity>
+          {/* Venue */}
+          <View className="flex-row items-center mt-3">
+            <MaterialIcons
+              name="place"
+              size={15}
+              color={colorScheme === "dark" ? "#CBD5E1" : "#64748B"}
+            />
 
-          <TouchableOpacity
-            onPress={() => onBookSlot(item)}
-            className="flex-1 bg-blue-600 rounded-2xl py-3 flex-row justify-center items-center"
-          >
-            <MaterialIcons name="event-available" size={18} color="#FFF" />
+            <Text
+              numberOfLines={1}
+              className="ml-2 flex-1 text-xs text-slate-700 dark:text-slate-300"
+            >
+              {item.venueName}
+            </Text>
+          </View>
 
-            <Text className="ml-2 text-white font-semibold">Book Slot</Text>
-          </TouchableOpacity>
+          {/* Date */}
+          <View className="flex-row items-center mt-2">
+            <MaterialIcons
+              name="schedule"
+              size={15}
+              color={colorScheme === "dark" ? "#CBD5E1" : "#64748B"}
+            />
+
+            <Text className="ml-2 text-xs text-slate-700 dark:text-slate-300">
+              {new Date(item.startDate).toLocaleDateString()}
+            </Text>
+          </View>
+
+          {/* Buttons */}
+          <View className="flex-row mt-4 gap-2">
+            <TouchableOpacity
+              onPress={() => onOpenMaps(item)}
+              className="flex-1 bg-slate-100 dark:bg-neutral-800 rounded-xl py-2 flex-row justify-center items-center"
+            >
+              <MaterialIcons
+                name="map"
+                size={16}
+                color={colorScheme === "dark" ? "#CBD5E1" : "#475569"}
+              />
+
+              <Text className="ml-1 text-xs font-medium text-slate-700 dark:text-slate-200">
+                Maps
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              onPress={() => onBookSlot(item)}
+              className="flex-1 bg-blue-700 rounded-xl py-2 flex-row justify-center items-center"
+            >
+              <MaterialIcons name="event-available" size={16} color="#FFF" />
+
+              <Text className="ml-1 text-xs font-semibold text-white">
+                Book
+              </Text>
+            </TouchableOpacity>
+          </View>
         </View>
       </TouchableOpacity>
     );
@@ -195,7 +229,7 @@ export default function EventBottomSheet({
       }}
     >
       <View
-        className="flex-1 bg-white rounded-t-[32px] px-5 pt-3"
+        className="flex-1 bg-white dark:bg-neutral-900 rounded-t-[32px] px-5 pt-3"
         style={{
           shadowColor: "#000",
           shadowOpacity: 0.1,
@@ -204,14 +238,16 @@ export default function EventBottomSheet({
         }}
       >
         <View className="items-center mb-4">
-          <View className="h-1.5 w-12 rounded-full bg-slate-300" />
+          <View className="h-1.5 w-12 rounded-full " />
         </View>
 
         <View className="flex-row justify-between items-center mb-4">
-          <Text className="text-xl font-bold text-slate-900">Events</Text>
+          <Text className="text-xl font-bold dark:text-slate-200">Events</Text>
 
-          <View className="bg-blue-100 px-3 py-1 rounded-full">
-            <Text className="font-medium text-blue-600">{events.length}</Text>
+          <View className="bg-blue-100 dark:bg-neutral-800 px-3 py-1 rounded-full">
+            <Text className="font-medium dark:text-slate-200">
+              {events.length}
+            </Text>
           </View>
         </View>
 

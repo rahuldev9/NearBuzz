@@ -63,13 +63,17 @@ export default function NotificationCard({
         color: "#e2e8f0",
       }}
       className={`mx-4 mb-3 rounded-2xl p-4 border-b ${
-        notification.isRead ? "bg-white" : "bg-blue-50"
+        notification.isRead
+          ? "bg-white dark:bg-neutral-800"
+          : "bg-blue-50 dark:bg-neutral-700"
       }`}
     >
       <View className="flex-row">
         {/* Icon */}
 
-        <View className="mr-4 mt-1">{getIcon(notification.type)}</View>
+        <View className="mr-4 mt-1 dark:text-slate-200">
+          {getIcon(notification.type)}
+        </View>
 
         {/* Content */}
 
@@ -79,7 +83,7 @@ export default function NotificationCard({
               <Text
                 className={`text-base ${
                   notification.isRead ? "font-medium" : "font-bold"
-                } text-slate-900`}
+                } text-slate-900 dark:text-slate-200`}
               >
                 {notification.title}
               </Text>
@@ -108,13 +112,13 @@ export default function NotificationCard({
             </View>
           </View>
 
-          <Text className="text-slate-600 mt-2 leading-6">
+          <Text className="text-slate-600 mt-2 leading-6 dark:text-slate-200">
             {notification.message}
           </Text>
 
           {notification.eventId?.title && (
-            <View className="mt-3 self-start bg-slate-100 rounded-full px-3 py-1">
-              <Text className="text-xs font-medium text-slate-700">
+            <View className="mt-3 self-start  rounded-full px-3 py-1">
+              <Text className="text-xs font-medium dark:text-slate-200">
                 {notification.eventId.title}
               </Text>
             </View>
