@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+
+  <url>
+    <loc>https://nearbuzz.vercel.app/</loc>
+    <changefreq>daily</changefreq>
+    <priority>1.0</priority>
+  </url>
+
+  <url>
+    <loc>https://nearbuzz.vercel.app/login</loc>
+  </url>
+
+  <url>
+    <loc>https://nearbuzz.vercel.app/register</loc>
+  </url>
+
+  <url>
+    <loc>https://nearbuzz.vercel.app/search</loc>
+  </url>
+
+  <url>
+    <loc>https://nearbuzz.vercel.app/event-details/6a3e8c113bc0c878ecd6cb8c</loc>
+    <lastmod>2026-06-26T17:12:47.816Z</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+</urlset>
