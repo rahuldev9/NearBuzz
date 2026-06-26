@@ -7,7 +7,7 @@ import {
   getEventBookings,
   updateEvent,
 } from "@/services/eventService";
-import { AntDesign, MaterialIcons } from "@expo/vector-icons";
+import { MaterialIcons } from "@expo/vector-icons";
 import * as Location from "expo-location";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
@@ -19,6 +19,7 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import AppHeader from "../Components/AppHeader";
 
 export default function EventDetailsScreen() {
   const router = useRouter();
@@ -176,19 +177,8 @@ export default function EventDetailsScreen() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-slate-50">
-      <View className="bg-white border-b border-slate-200 px-5 py-4 flex-row items-center justify-between">
-        <TouchableOpacity
-          onPress={() => router.back()}
-          className="h-10 w-10 items-center justify-center rounded-full bg-slate-100"
-        >
-          <AntDesign name="arrow-left" size={20} color="#0F172A" />
-        </TouchableOpacity>
-        <Text className="text-lg font-semibold text-slate-900">
-          Event Details
-        </Text>
-        <View className="h-10 w-10" />
-      </View>
+    <SafeAreaView className="flex-1 bg-white dark:bg-neutral-900">
+      <AppHeader title="Event Details" />
 
       <ScrollView
         className="flex-1 px-5 py-6"
@@ -203,21 +193,23 @@ export default function EventDetailsScreen() {
             <Text className="text-red-600 text-center">{error}</Text>
           </View>
         ) : !event ? (
-          <View className="bg-white rounded-3xl p-6">
-            <Text className="text-slate-600 text-center">
+          <View className=" dark:bg-neutral-900rounded-3xl p-6">
+            <Text className=" dark:text-slate-200 text-center">
               Event not available.
             </Text>
           </View>
         ) : (
-          <View className="bg-white rounded-3xl p-6 shadow-sm">
+          <View className="rounded-3xl p-6 shadow-sm">
             {/* Event Header */}
             <View className="flex-row justify-between items-start">
               <View className="flex-1">
-                <Text className="text-3xl font-bold text-slate-900">
+                <Text className="text-3xl font-bold dark:text-slate-200">
                   {event.title}
                 </Text>
 
-                <Text className="text-slate-500 mt-2">{event.category}</Text>
+                <Text className="dark:text-slate-200 mt-2">
+                  {event.category}
+                </Text>
               </View>
 
               <View
@@ -245,42 +237,48 @@ export default function EventDetailsScreen() {
 
             {/* Description */}
             <View className="mt-6">
-              <Text className="text-lg font-bold text-slate-900">
+              <Text className="text-lg font-bold dark:text-slate-200">
                 Description
               </Text>
 
-              <Text className="text-slate-600 mt-2 leading-6">
+              <Text className="dark:text-slate-200 mt-2 leading-6">
                 {event.description}
               </Text>
             </View>
 
             {/* Event Details */}
-            <View className="mt-6 bg-slate-50 rounded-2xl p-4">
+            <View className="mt-6 dark:bg-neutral-900 rounded-2xl p-4">
               <View className="flex-row items-start">
                 <MaterialIcons name="location-on" size={22} color="#2563EB" />
 
                 <View className="ml-3 flex-1">
-                  <Text className="font-semibold text-slate-900">Venue</Text>
+                  <Text className="font-semibold dark:text-slate-200">
+                    Venue
+                  </Text>
 
-                  <Text className="text-slate-600 mt-1">{event.venueName}</Text>
+                  <Text className="dark:text-slate-200 mt-1">
+                    {event.venueName}
+                  </Text>
 
-                  <Text className="text-slate-500 text-sm">
+                  <Text className="dark:text-slate-200 text-sm">
                     {event.address}
                   </Text>
                 </View>
               </View>
 
-              <View className="h-px bg-slate-200 my-4" />
+              <View className="h-px dark:bg-neutral-900 my-4" />
 
               <View className="flex-row items-start">
                 <MaterialIcons name="schedule" size={22} color="#2563EB" />
 
                 <View className="ml-3">
-                  <Text className="font-semibold text-slate-900">
+                  <Text className="font-semibold dark:text-slate-200">
                     Date & Time
                   </Text>
 
-                  <Text className="text-slate-600 mt-1">{formattedDate}</Text>
+                  <Text className="dark:text-slate-200 mt-1">
+                    {formattedDate}
+                  </Text>
                 </View>
               </View>
             </View>
@@ -299,23 +297,27 @@ export default function EventDetailsScreen() {
 
             {/* Status Controls */}
             <View className="mt-6">
-              <Text className="font-bold text-slate-900 mb-3 text-lg">
+              <Text className="font-bold text-slate-900 dark:text-white mb-3 text-lg">
                 Event Status
               </Text>
 
-              <View className="flex-row bg-slate-100 rounded-2xl p-1">
+              <View className="flex-row bg-slate-100 dark:bg-neutral-800 rounded-2xl p-1">
                 {(["Scheduled", "Live", "Closed"] as const).map((option) => (
                   <TouchableOpacity
                     key={option}
                     disabled={saving}
                     onPress={() => handleStatusChange(option)}
                     className={`flex-1 py-3 rounded-xl items-center ${
-                      status === option ? "bg-white shadow-sm" : ""
+                      status === option
+                        ? "bg-white dark:bg-neutral-700 shadow-sm"
+                        : ""
                     }`}
                   >
                     <Text
                       className={`font-semibold ${
-                        status === option ? "text-blue-600" : "text-slate-500"
+                        status === option
+                          ? "text-blue-600 dark:text-blue-400"
+                          : "text-slate-500 dark:text-slate-300"
                       }`}
                     >
                       {saving && status === option ? "..." : option}
@@ -325,16 +327,18 @@ export default function EventDetailsScreen() {
               </View>
 
               {statusMessage ? (
-                <View className="bg-blue-50 rounded-xl p-3 mt-3">
-                  <Text className="text-blue-700 text-sm">{statusMessage}</Text>
+                <View className="bg-blue-50 dark:bg-blue-950 rounded-xl p-3 mt-3">
+                  <Text className="text-blue-700 dark:text-blue-300 text-sm">
+                    {statusMessage}
+                  </Text>
                 </View>
               ) : null}
             </View>
           </View>
         )}
         {isEventOwner ? (
-          <View className="mt-6 bg-slate-50 rounded-3xl p-5 shadow-sm">
-            <Text className="text-lg font-bold text-slate-900 mb-4">
+          <View className="mt-6 rounded-3xl p-5 shadow-sm">
+            <Text className="text-lg font-bold dark:text-slate-200 mb-4">
               Event Bookings
             </Text>
 
@@ -350,32 +354,32 @@ export default function EventDetailsScreen() {
               </View>
             ) : bookings.length === 0 ? (
               <View className="rounded-3xl bg-white p-4">
-                <Text className="text-slate-600 text-center">
+                <Text className="dark:text-slate-200 text-center">
                   No bookings yet for this event.
                 </Text>
               </View>
             ) : (
-              <View className="mt-4 rounded-3xl bg-white overflow-hidden">
+              <View className="mt-4 rounded-3xl overflow-hidden">
                 <ScrollView horizontal showsHorizontalScrollIndicator={false}>
                   <View>
                     {/* Table Header */}
-                    <View className="flex-row bg-slate-100 border-b border-slate-200">
-                      <Text className="w-40 px-4 py-3 font-bold text-slate-800">
+                    <View className="flex-row  border-b border-slate-200">
+                      <Text className="w-40 px-4 py-3 font-bold dark:text-slate-200">
                         Name
                       </Text>
-                      <Text className="w-56 px-4 py-3 font-bold text-slate-800">
+                      <Text className="w-56 px-4 py-3 font-bold dark:text-slate-200">
                         Email
                       </Text>
-                      <Text className="w-28 px-4 py-3 font-bold text-slate-800">
+                      <Text className="w-28 px-4 py-3 font-bold dark:text-slate-200">
                         QR Status
                       </Text>
-                      <Text className="w-32 px-4 py-3 font-bold text-slate-800">
+                      <Text className="w-32 px-4 py-3 font-bold dark:text-slate-200">
                         Booking
                       </Text>
-                      <Text className="w-44 px-4 py-3 font-bold text-slate-800">
+                      <Text className="w-44 px-4 py-3 font-bold dark:text-slate-200">
                         Date
                       </Text>
-                      <Text className="w-28 px-4 py-3 font-bold text-slate-800">
+                      <Text className="w-28 px-4 py-3 font-bold dark:text-slate-200">
                         Action
                       </Text>
                     </View>
@@ -391,19 +395,21 @@ export default function EventDetailsScreen() {
                         <View
                           key={booking._id}
                           className={`flex-row border-b border-slate-100 ${
-                            index % 2 === 0 ? "bg-white" : "bg-slate-50"
+                            index % 2 === 0
+                              ? "dark:bg-neutral-900"
+                              : "dark:bg-neutral-800"
                           }`}
                         >
                           <Text
                             numberOfLines={1}
-                            className="w-40 px-4 py-4 text-slate-900 font-medium"
+                            className="w-40 px-4 py-4 dark:text-slate-200 font-medium"
                           >
                             {attendeeName}
                           </Text>
 
                           <Text
                             numberOfLines={1}
-                            className="w-56 px-4 py-4 text-slate-600"
+                            className="w-56 px-4 py-4 dark:text-slate-200"
                           >
                             {booking.userEmail}
                           </Text>
@@ -428,11 +434,11 @@ export default function EventDetailsScreen() {
                             </View>
                           </View>
 
-                          <Text className="w-32 px-4 py-4 text-slate-600">
+                          <Text className="w-32 px-4 py-4 dark:text-slate-200">
                             {booking.bookingStatus}
                           </Text>
 
-                          <Text className="w-44 px-4 py-4 text-slate-500 text-xs">
+                          <Text className="w-44 px-4 py-4 dark:text-slate-200 text-xs">
                             {new Date(booking.createdAt).toLocaleDateString()}
                           </Text>
 

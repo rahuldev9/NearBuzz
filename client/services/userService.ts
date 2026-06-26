@@ -6,6 +6,7 @@ export interface User {
   email: string;
   role: string;
   profileImage?: string;
+  phone?: string;
 }
 const parseResponse = async (response: Response) => {
   const data = await response.json();
@@ -20,6 +21,7 @@ const parseResponse = async (response: Response) => {
 export const updateProfile = async (payload: {
   profileImage?: string;
   name?: string;
+  phone?: string;
 }) => {
   const response = await authFetch(`${AUTH_API_URL}/me`, {
     method: "PUT",

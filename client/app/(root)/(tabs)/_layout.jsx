@@ -1,9 +1,11 @@
 import { MaterialIcons } from "@expo/vector-icons";
 import { Redirect, Tabs } from "expo-router";
+import { useColorScheme } from "nativewind";
 import { Image } from "react-native";
 import { useAuth } from "../../../context/AuthContext";
 export default function TabLayout() {
   const { user, isAuthenticated, isInitializing } = useAuth();
+  const { colorScheme } = useColorScheme();
 
   if (isInitializing) {
     return null;
@@ -14,11 +16,21 @@ export default function TabLayout() {
   }
 
   return (
-    <Tabs screenOptions={{ headerShown: false }}>
+    <Tabs
+      screenOptions={{
+        headerShown: false,
+        tabBarStyle: {
+          backgroundColor: colorScheme === "dark" ? "#171717" : "#ffffff",
+          borderTopColor: colorScheme === "dark" ? "#262626" : "#e5e7eb",
+        },
+        tabBarActiveTintColor: "#2563eb",
+        tabBarInactiveTintColor: colorScheme === "dark" ? "#a3a3a3" : "#6b7280",
+      }}
+    >
       <Tabs.Screen
         name="index"
         options={{
-          title: "Home",
+          tabBarLabel: () => null,
           tabBarIcon: ({ color, size }) => (
             <MaterialIcons name="home" size={size} color={color} />
           ),
@@ -28,7 +40,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="search"
         options={{
-          title: "Search",
+          tabBarLabel: () => null,
           tabBarIcon: ({ color, size }) => (
             <MaterialIcons name="search" size={size} color={color} />
           ),
@@ -38,7 +50,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="eventpost"
         options={{
-          title: "Event Post",
+          tabBarLabel: () => null,
           tabBarIcon: ({ color, size }) => (
             <MaterialIcons name="event" size={size} color={color} />
           ),
@@ -48,7 +60,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="notifications"
         options={{
-          title: "Alerts",
+          tabBarLabel: () => null,
           tabBarIcon: ({ color, size }) => (
             <MaterialIcons name="notifications" size={size} color={color} />
           ),
@@ -58,7 +70,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="profile"
         options={{
-          title: "Profile",
+          tabBarLabel: () => null,
           tabBarIcon: ({ color, size, focused }) =>
             user?.profileImage ? (
               <Image

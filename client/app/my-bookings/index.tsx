@@ -12,6 +12,7 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import AppHeader from "../Components/AppHeader";
 
 export default function MyBookingsScreen() {
   const [bookings, setBookings] = useState<any[]>([]);
@@ -73,20 +74,10 @@ export default function MyBookingsScreen() {
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-slate-50">
+    <SafeAreaView className="flex-1 bg-white dark:bg-neutral-900">
       {/* Header */}
-      <View className="bg-white border-b border-slate-200 px-5 py-4 flex-row items-center">
-        <TouchableOpacity
-          onPress={() => router.back()}
-          className="h-10 w-10 rounded-full bg-slate-100 items-center justify-center"
-        >
-          <AntDesign name="arrow-left" size={20} color="#0F172A" />
-        </TouchableOpacity>
 
-        <Text className="ml-4 text-xl font-bold text-slate-900">
-          My Bookings
-        </Text>
-      </View>
+      <AppHeader title="My Bookings" />
 
       <FlatList
         data={bookings}
@@ -102,11 +93,11 @@ export default function MyBookingsScreen() {
           <View className="flex-1 justify-center items-center">
             <MaterialIcons name="event-busy" size={90} color="#CBD5E1" />
 
-            <Text className="text-lg font-semibold text-slate-700 mt-4">
+            <Text className="text-lg font-semibold dark:text-slate-200 mt-4">
               No Bookings Yet
             </Text>
 
-            <Text className="text-slate-500 mt-2 text-center px-10">
+            <Text className="dark:text-slate-200 mt-2 text-center px-10">
               Book an event to see your QR passes here.
             </Text>
           </View>
@@ -115,7 +106,7 @@ export default function MyBookingsScreen() {
           <TouchableOpacity
             activeOpacity={0.85}
             onPress={() => handleBookingPress(item._id)}
-            className="bg-white rounded-3xl p-5 mb-4"
+            className="rounded-3xl border border-slate-200 dark:border-slate-700 p-5 mb-4 shadow-lg"
             style={{
               shadowColor: "#000",
               shadowOpacity: 0.05,
@@ -127,13 +118,13 @@ export default function MyBookingsScreen() {
             <View className="flex-row justify-between items-start">
               <View className="flex-1 pr-3">
                 <Text
-                  className="text-lg font-bold text-slate-900"
+                  className="text-lg font-bold dark:text-slate-200"
                   numberOfLines={1}
                 >
                   {item.eventId?.title}
                 </Text>
 
-                <Text className="text-slate-500 mt-1" numberOfLines={1}>
+                <Text className="dark:text-slate-200 mt-1" numberOfLines={1}>
                   {item.eventId?.category}
                 </Text>
               </View>
@@ -149,7 +140,10 @@ export default function MyBookingsScreen() {
             <View className="mt-4 flex-row items-center">
               <MaterialIcons name="location-on" size={18} color="#2563EB" />
 
-              <Text className="ml-2 flex-1 text-slate-600" numberOfLines={1}>
+              <Text
+                className="ml-2 flex-1 dark:text-slate-200"
+                numberOfLines={1}
+              >
                 {item.eventId?.venueName}
               </Text>
             </View>
@@ -159,14 +153,14 @@ export default function MyBookingsScreen() {
               <View className="mt-3 flex-row items-center">
                 <MaterialIcons name="schedule" size={18} color="#2563EB" />
 
-                <Text className="ml-2 text-slate-600">
+                <Text className="ml-2 dark:text-slate-200">
                   {new Date(item.eventId.startDate).toLocaleDateString()}
                 </Text>
               </View>
             )}
 
             {/* Footer */}
-            <View className="mt-5 pt-4 border-t border-slate-100 flex-row items-center justify-between">
+            <View className="mt-5 pt-4 flex-row items-center justify-between">
               <Text className="text-blue-600 font-semibold">View QR Pass</Text>
 
               <View className="flex-row items-center">

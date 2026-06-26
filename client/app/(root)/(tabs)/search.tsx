@@ -163,7 +163,7 @@ export default function SearchScreen() {
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-slate-100">
+    <SafeAreaView className="flex-1 bg-white">
       {/* MAP */}
       <View className="absolute inset-0">
         <AppMap
@@ -187,7 +187,7 @@ export default function SearchScreen() {
       {/* SEARCH BAR */}
       <View className="absolute top-4 left-4 right-4" style={{ zIndex: 50 }}>
         <View
-          className="flex-row items-center bg-white rounded-2xl px-4"
+          className="flex-row items-center bg-white dark:bg-neutral-900 rounded-2xl px-4"
           style={{
             height: 56,
             shadowColor: "#000",
@@ -205,7 +205,7 @@ export default function SearchScreen() {
             value={search}
             onFocus={() => setIsFocused(true)}
             onChangeText={setSearch}
-            className="flex-1 ml-2 text-slate-900 focus:outline-none"
+            className="flex-1 ml-2 dark:text-slate-200 focus:outline-none"
             returnKeyType="search"
           />
 

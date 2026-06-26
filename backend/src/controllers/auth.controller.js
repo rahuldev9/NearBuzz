@@ -17,6 +17,7 @@ const sanitizeUser = (user) => ({
   email: user.email,
   role: user.role,
   profileImage: user.profileImage,
+  phone: user.phone,
 });
 
 const getCookieOptions = (maxAge) => {
@@ -417,7 +418,7 @@ export const updateProfile = async (req, res) => {
       process.env.JWT_SECRET,
     );
 
-    const { name, profileImage } = req.body;
+    const { name, profileImage, phone } = req.body;
 
     const user = await User.findById(decoded.id);
 
@@ -434,6 +435,30 @@ export const updateProfile = async (req, res) => {
     if (profileImage) {
       user.profileImage = profileImage;
     }
+    if (phone !== undefined && phone !== null && phone !== "") {
+      const cleanedPhone = phone.trim();
+
+      // Support both formats:
+      // 1. With country code: +91-3 digits, then 10 digits starting with 6-9
+      // 2. Without country code: 10 digits starting with 6-9
+      const internationalRegex = /^\+\d{1,3}[6-9]\d{9}$/; // +CC + 10 digit number starting with 6-9
+      const domesticRegex = /^[6-9]\d{9}$/; // 10 digit number starting with 6-9
+
+      if (
+        !internationalRegex.test(cleanedPhone) &&
+        !domesticRegex.test(cleanedPhone)
+      ) {
+        return res.status(400).json({
+          message:
+            "Phone must be 10 digits (6-9xxxxxxxxx) or with country code (+CC6-9xxxxxxxxx)",
+        });
+      }
+
+      user.phone = cleanedPhone;
+    } else if (phone === "") {
+      // Allow clearing phone if explicitly set to empty string
+      user.phone = undefined;
+    }
 
     await user.save();
 
@@ -442,6 +467,26 @@ export const updateProfile = async (req, res) => {
       user: sanitizeUser(user),
     });
   } catch (err) {
+    console.error("Error updating profile:", err);
+
+    // Handle MongoDB validation errors
+    if (err.name === "ValidationError") {
+      const messages = Object.values(err.errors)
+        .map((e) => e.message)
+        .join(", ");
+      return res.status(400).json({
+        message: messages || "Validation error",
+      });
+    }
+
+    // Handle duplicate key errors (e.g., phone number already exists)
+    if (err.code === 11000) {
+      const field = Object.keys(err.keyPattern || {})[0];
+      return res.status(400).json({
+        message: `This ${field} is already in use`,
+      });
+    }
+
     res.status(401).json({
       message: "Unauthorized",
     });

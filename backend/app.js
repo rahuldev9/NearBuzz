@@ -8,7 +8,7 @@ import authRoutes from "./src/routes/auth.routes.js";
 import bookingRoutes from "./src/routes/booking.routes.js";
 import eventRoutes from "./src/routes/event.routes.js";
 import notificationRoutes from "./src/routes/notification.routes.js";
-
+import sitemapRouter from "./src/routes/sitemap.js";
 const app = express();
 
 const corsOrigin = process.env.CORS_ORIGIN || "http://localhost:8081";
@@ -22,6 +22,7 @@ app.use(
   }),
 );
 
+app.use(sitemapRouter);
 app.use(helmet());
 app.use(cookieParser());
 

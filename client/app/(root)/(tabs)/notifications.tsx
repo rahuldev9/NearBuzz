@@ -128,9 +128,11 @@ export default function NotificationsScreen() {
 
   if (loading) {
     return (
-      <ScrollView className="flex-1 ">
+      <ScrollView className="flex-1 bg-white dark:bg-neutral-900">
         <View className="px-5 py-5">
-          <Text className="text-3xl font-bold">Notifications</Text>
+          <Text className="text-3xl font-bold dark:text-slate-200">
+            Notifications
+          </Text>
         </View>
 
         {Array.from({ length: 6 }).map((_, i) => (
@@ -141,9 +143,9 @@ export default function NotificationsScreen() {
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-slate-50">
+    <SafeAreaView className="flex-1 ">
       <ScrollView
-        className="flex-1 px-3 bg-white"
+        className="flex-1 px-3 bg-white dark:bg-neutral-900"
         showsVerticalScrollIndicator={false}
       >
         {/* Header */}
@@ -151,9 +153,13 @@ export default function NotificationsScreen() {
         <View className="px-5 pt-5 pb-3 ">
           <View className="flex-row justify-between items-center">
             <View>
-              <Text className="text-3xl font-bold">Notifications</Text>
+              <Text className="text-3xl font-bold dark:text-slate-200">
+                Notifications
+              </Text>
 
-              <Text className="text-slate-500 mt-1">{unreadCount} unread</Text>
+              <Text className=" mt-1 dark:text-slate-200">
+                {unreadCount} unread
+              </Text>
             </View>
 
             {/* {notifications.length > 0 && (

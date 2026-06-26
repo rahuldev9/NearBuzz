@@ -1,18 +1,11 @@
-import { AntDesign } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
 import { MdOutlineDone } from "react-icons/md";
-import {
-  ActivityIndicator,
-  Image,
-  ScrollView,
-  Text,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import { ActivityIndicator, Image, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { getBookingById } from "@/services/eventService";
+import AppHeader from "../Components/AppHeader";
 
 export default function BookingSuccessScreen() {
   const router = useRouter();
@@ -50,38 +43,28 @@ export default function BookingSuccessScreen() {
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-slate-50">
-      <View className="bg-white border-b border-slate-200 px-5 py-4 flex-row items-center">
-        <TouchableOpacity
-          onPress={() => router.back()}
-          className="h-10 w-10 rounded-full bg-slate-100 items-center justify-center"
-        >
-          <AntDesign name="arrow-left" size={20} color="#0F172A" />
-        </TouchableOpacity>
+    <SafeAreaView className="flex-1 bg-white dark:bg-neutral-900">
+      <AppHeader title="My Bookings" />
 
-        <Text className="ml-4 text-xl font-bold text-slate-900">
-          My Bookings
-        </Text>
-      </View>
       <ScrollView
         className="flex-1 px-5 py-6"
         contentContainerStyle={{
           alignItems: "center",
         }}
       >
-        <View className="h-24 w-24 rounded-full bg-green-100 items-center justify-center">
+        <View className="h-24 w-24 rounded-full bg-green-50 dark:bg-neutral-800 items-center justify-center">
           <MdOutlineDone size={46} color="#16A34A" />
         </View>
 
-        <Text className="text-3xl font-bold text-slate-900 mt-6">
+        <Text className="text-3xl font-bold dark:text-slate-200 mt-6">
           Booking Confirmed
         </Text>
 
-        <Text className="text-slate-500 mt-2 text-center">
+        <Text className=" dark:text-slate-200 mt-2 text-center">
           Show this QR code at the event entrance.
         </Text>
 
-        <View className="bg-white rounded-3xl p-6 mt-8 w-full items-center">
+        <View className="rounded-3xl p-6 mt-8 w-full items-center">
           <Image
             source={{
               uri: booking.qrCode,
@@ -92,38 +75,41 @@ export default function BookingSuccessScreen() {
             }}
           />
 
-          {/* <Text className="mt-6 text-sm text-slate-500">Event Code</Text>
-
-          <Text className="text-xl font-bold text-blue-600">
-            {booking.eventCode}
-          </Text> */}
           <View
-            className={`px-3 py-1 rounded-full ${
-              booking.qrStatus === "Active" ? "bg-green-100" : "bg-red-100"
+            className={`mt-5 px-4 py-2 rounded-full ${
+              booking.qrStatus === "Active"
+                ? "bg-green-100 dark:bg-green-900/40"
+                : "bg-red-100 dark:bg-red-900/40"
             }`}
           >
             <Text
               className={`font-semibold ${
                 booking.qrStatus === "Active"
-                  ? "text-green-700"
-                  : "text-red-700"
+                  ? "text-green-700 dark:text-green-300"
+                  : "text-red-700 dark:text-red-300"
               }`}
             >
               {booking.qrStatus}
             </Text>
           </View>
 
-          <Text className="mt-4 text-sm text-slate-500">Registered Email</Text>
+          <Text className="mt-6 text-sm  dark:text-slate-200">
+            Registered Email
+          </Text>
 
-          <Text className="font-medium">{booking.userEmail}</Text>
+          <Text className="font-medium text-slate-900 dark:text-slate-100 mt-1">
+            {booking.userEmail}
+          </Text>
         </View>
 
         {/* <TouchableOpacity
-          onPress={() => router.replace("/")}
-          className="bg-blue-600 rounded-2xl py-4 px-10 mt-8"
-        >
-          <Text className="text-white font-bold">Back to Home</Text>
-        </TouchableOpacity> */}
+        onPress={() => router.replace("/")}
+        className="bg-blue-600 rounded-2xl py-4 px-10 mt-8"
+      >
+        <Text className="text-white font-bold">
+          Back to Home
+        </Text>
+      </TouchableOpacity> */}
       </ScrollView>
     </SafeAreaView>
   );

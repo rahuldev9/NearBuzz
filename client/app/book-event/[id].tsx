@@ -1,6 +1,6 @@
 import ConfirmDialog from "@/Components/ConfirmDialog";
 import { bookEvent, getEvent, getMyBookings } from "@/services/eventService";
-import { AntDesign, MaterialIcons } from "@expo/vector-icons";
+import { MaterialIcons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
@@ -12,6 +12,7 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import AppHeader from "../Components/AppHeader";
 
 export default function BookEventScreen() {
   const router = useRouter();
@@ -103,7 +104,7 @@ export default function BookEventScreen() {
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-slate-50">
+    <SafeAreaView className="flex-1 bg-white dark:bg-neutral-900">
       <ConfirmDialog
         visible={showConfirmDialog}
         loading={booking}
@@ -118,46 +119,37 @@ export default function BookEventScreen() {
         }}
         onConfirm={confirmBooking}
       />
-      <View className="bg-white border-b border-slate-200 px-5 py-4 flex-row items-center justify-between">
-        <TouchableOpacity
-          onPress={() => router.back()}
-          className="h-10 w-10 items-center justify-center rounded-full bg-slate-100"
-        >
-          <AntDesign name="arrow-left" size={20} color="#0F172A" />
-        </TouchableOpacity>
-
-        <Text className="text-lg font-semibold">Book Event</Text>
-
-        <View className="w-10" />
-      </View>
+      <AppHeader title="Book Event" />
 
       <ScrollView className="flex-1 px-5 py-5">
-        <View className="bg-white rounded-3xl p-5">
-          <Text className="text-3xl font-bold text-slate-900">
+        <View className=" rounded-3xl p-5">
+          <Text className="text-3xl font-bold dark:text-slate-200">
             {event.title}
           </Text>
 
-          <View className="self-start mt-3 bg-blue-100 px-3 py-1 rounded-full">
-            <Text className="text-blue-700 font-semibold">{event.status}</Text>
+          <View className="self-start mt-3 bg-blue-800  px-3 py-1 rounded-full">
+            <Text className="text-white font-semibold">{event.status}</Text>
           </View>
 
-          <Text className="text-slate-500 mt-2">{event.category}</Text>
+          <Text className="dark:text-slate-200 mt-2">{event.category}</Text>
 
-          <Text className="text-slate-700 mt-4 leading-6">
+          <Text className="dark:text-slate-200 mt-4 leading-6">
             {event.description}
           </Text>
         </View>
 
-        <View className="bg-white rounded-3xl p-5 mt-4">
+        <View className=" rounded-3xl p-5 mt-4">
           <View className="flex-row items-center">
             <MaterialIcons name="location-on" size={20} color="#2563EB" />
 
-            <Text className="ml-2 font-semibold">Venue</Text>
+            <Text className="ml-2 font-semibold dark:text-slate-200">
+              Venue
+            </Text>
           </View>
 
-          <Text className="mt-3 text-slate-900">{event.venueName}</Text>
+          <Text className="mt-3 dark:text-slate-200">{event.venueName}</Text>
 
-          <Text className="text-slate-500 mt-1">{event.address}</Text>
+          <Text className="dark:text-slate-200 mt-1">{event.address}</Text>
         </View>
 
         {/* <View className="bg-white rounded-3xl p-5 mt-4">
@@ -168,10 +160,10 @@ export default function BookEventScreen() {
           </Text>
         </View> */}
 
-        <View className="bg-white rounded-3xl p-5 mt-4">
-          <Text className="font-semibold">Date & Time</Text>
+        <View className=" rounded-3xl p-5 mt-4">
+          <Text className="font-semibold dark:text-slate-200">Date & Time</Text>
 
-          <Text className="mt-2 text-slate-700">
+          <Text className="mt-2 dark:text-slate-200">
             {new Date(event.startDate).toLocaleString()}
           </Text>
         </View>
@@ -197,9 +189,11 @@ export default function BookEventScreen() {
         </TouchableOpacity>
 
         {existingBooking && (
-          <View className="mt-4 px-4 py-3 bg-white rounded-2xl">
-            <Text className="font-semibold">You already booked this event</Text>
-            <Text className="text-slate-600 mt-1">
+          <View className="mt-4 px-4 py-3  rounded-2xl">
+            <Text className="font-semibold dark:text-slate-200">
+              You already booked this event
+            </Text>
+            <Text className="dark:text-slate-200 mt-1">
               Status: {existingBooking.bookingStatus || "Booked"}
             </Text>
           </View>

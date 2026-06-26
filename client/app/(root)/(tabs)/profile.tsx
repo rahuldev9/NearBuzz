@@ -62,7 +62,7 @@ export default function ProfileScreen() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-slate-50">
+    <SafeAreaView className="flex-1 bg-white dark:bg-neutral-900">
       <View className="items-center pt-10">
         <TouchableOpacity onPress={pickProfileImage}>
           {user?.profileImage ? (
@@ -72,8 +72,8 @@ export default function ProfileScreen() {
             />
           ) : (
             <View className="w-28 h-28 rounded-full bg-blue-500 items-center justify-center">
-              <Text className="text-white text-4xl font-bold">
-                {user?.name?.[0] ?? "N"}
+              <Text className="text-slate-200  dark:text-slate-200 text-4xl font-bold">
+                {user?.name?.charAt(0).toUpperCase()}
               </Text>
             </View>
           )}
@@ -83,36 +83,36 @@ export default function ProfileScreen() {
           </View>
         </TouchableOpacity>
 
-        <Text className="text-2xl font-bold mt-4">
+        <Text className="text-2xl font-bold mt-4 dark:text-slate-200">
           {user?.name ?? "NearBuzz User"}
         </Text>
 
-        <Text className="text-slate-500">{user?.email}</Text>
+        <Text className=" dark:text-slate-200">{user?.email}</Text>
       </View>
 
       <View className="px-5 mt-10">
         <TouchableOpacity
           onPress={() => router.push("/edit-profile")}
-          className="bg-white rounded-2xl p-4 flex-row items-center mb-3"
+          className="dark:bg-neutral-900 rounded-2xl p-4 flex-row items-center mb-3"
         >
-          <MaterialIcons name="person" size={24} />
-          <Text className="ml-3">Edit Profile</Text>
+          <MaterialIcons name="person" color="#2563eb" size={24} />
+          <Text className="ml-3 dark:text-slate-200">Edit Profile</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
           onPress={() => router.push("/settings")}
-          className="bg-white rounded-2xl p-4 flex-row items-center mb-3"
+          className="dark:bg-neutral-900 rounded-2xl p-4 flex-row items-center mb-3"
         >
-          <MaterialIcons name="settings" size={24} />
-          <Text className="ml-3">Settings</Text>
+          <MaterialIcons name="settings" color="#2563eb" size={24} />
+          <Text className="ml-3 dark:text-slate-200">Settings</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
           onPress={() => router.push("/my-bookings")}
-          className="bg-white rounded-2xl p-4 flex-row items-center mb-3"
+          className="dark:bg-neutral-900 rounded-2xl p-4 flex-row items-center mb-3"
         >
-          <MaterialIcons name="confirmation-number" size={24} />
-          <Text className="ml-3">My Bookings</Text>
+          <MaterialIcons name="confirmation-number" color="#2563eb" size={24} />
+          <Text className="ml-3 dark:text-slate-200">My Bookings</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
