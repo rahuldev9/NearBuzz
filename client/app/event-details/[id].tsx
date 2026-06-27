@@ -353,7 +353,7 @@ export default function EventDetailsScreen() {
                 </Text>
               </View>
             ) : bookings.length === 0 ? (
-              <View className="rounded-3xl bg-white p-4">
+              <View className="rounded-3xl dark:bg-neutral-900 p-4">
                 <Text className="dark:text-slate-200 text-center">
                   No bookings yet for this event.
                 </Text>

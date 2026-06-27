@@ -5,10 +5,10 @@ import { fileURLToPath } from "url";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-dotenv.config({ path: `${__dirname}/.env` });
+dotenv.config({ path: path.resolve(__dirname, ".env") });
 
-import app from "./app.js";
-import { connectDB } from "./src/config/db.js";
+const app = (await import("./app.js")).default;
+const { connectDB } = await import("./src/config/db.js");
 
 connectDB();
 

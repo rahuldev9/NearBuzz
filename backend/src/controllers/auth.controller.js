@@ -127,6 +127,23 @@ const generateOtp = () =>
 
 const normalizeEmail = (email) => email.trim().toLowerCase();
 const normalizeUsername = (name) => name.trim().toLowerCase();
+const escapeRegExp = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+const findUserByEmail = (email) => {
+  const normalizedEmail = normalizeEmail(email);
+
+  return User.findOne({
+    email: { $regex: `^${escapeRegExp(normalizedEmail)}$`, $options: "i" },
+  });
+};
+
+const findUserByUsername = (name) => {
+  const normalizedName = normalizeUsername(name);
+
+  return User.findOne({
+    name: { $regex: `^${escapeRegExp(normalizedName)}$`, $options: "i" },
+  });
+};
 
 const isValidUsername = (name) =>
   /^(?!.*\.\.)(?!\.)(?!.*\.$)[a-z0-9._]{3,30}$/.test(name);
@@ -186,7 +203,7 @@ export const sendRegistrationOtp = async (req, res) => {
   }
 
   const email = normalizeEmail(rawEmail);
-  const exists = await User.findOne({ email });
+  const exists = await findUserByEmail(email);
 
   if (exists) {
     return res.status(400).json({
@@ -194,7 +211,7 @@ export const sendRegistrationOtp = async (req, res) => {
     });
   }
 
-  const usernameExists = await User.findOne({ name: username });
+  const usernameExists = await findUserByUsername(username);
 
   if (usernameExists) {
     return res.status(400).json({
@@ -240,7 +257,7 @@ export const register = async (req, res) => {
   }
 
   const email = normalizeEmail(rawEmail);
-  const exists = await User.findOne({ email });
+  const exists = await findUserByEmail(email);
 
   if (exists) {
     return res.status(400).json({
@@ -248,7 +265,7 @@ export const register = async (req, res) => {
     });
   }
 
-  const usernameExists = await User.findOne({ name: username });
+  const usernameExists = await findUserByUsername(username);
 
   if (usernameExists) {
     return res.status(400).json({
@@ -311,7 +328,7 @@ export const login = async (req, res) => {
   }
 
   const email = normalizeEmail(rawEmail);
-  const user = await User.findOne({ email }).select("+password");
+  const user = await findUserByEmail(email).select("+password");
 
   if (!user) {
     return res.status(400).json({
@@ -348,7 +365,7 @@ export const sendOtp = async (req, res) => {
   }
 
   const email = normalizeEmail(rawEmail);
-  const user = await User.findOne({ email });
+  const user = await findUserByEmail(email);
 
   if (!user) {
     return res.status(404).json({ message: "Email not found" });
@@ -399,7 +416,7 @@ export const resetPassword = async (req, res) => {
     return res.status(400).json({ message: "OTP is invalid or expired" });
   }
 
-  const user = await User.findOne({ email });
+  const user = await findUserByEmail(email);
 
   if (!user) {
     return res.status(404).json({ message: "Email not found" });

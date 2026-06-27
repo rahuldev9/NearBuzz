@@ -7,9 +7,11 @@ import { router } from "expo-router";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
+  Alert,
   Keyboard,
   KeyboardEvent,
   Linking,
+  Platform,
   Pressable,
   TextInput,
   TouchableOpacity,
@@ -152,6 +154,37 @@ export default function SearchScreen() {
     });
   };
 
+  const handleVoiceSearch = () => {
+    if (Platform.OS === "web" && typeof window !== "undefined") {
+      const SpeechRecognitionCtor =
+        (window as any).webkitSpeechRecognition ||
+        (window as any).SpeechRecognition;
+
+      if (SpeechRecognitionCtor) {
+        const recognition = new SpeechRecognitionCtor();
+        recognition.lang = "en-US";
+        recognition.interimResults = false;
+        recognition.maxAlternatives = 1;
+
+        recognition.onresult = (event: any) => {
+          const transcript = event.results[0][0].transcript;
+          setSearch(transcript);
+          setIsFocused(true);
+        };
+        recognition.onerror = () => {
+          Alert.alert("Voice Search", "Unable to process speech right now.");
+        };
+        recognition.start();
+        return;
+      }
+    }
+
+    Alert.alert(
+      "Voice Search",
+      "Voice search is available on supported web browsers. Please type your query instead.",
+    );
+  };
+
   if (loadingEvents || loadingLocation) {
     return (
       <SafeAreaView className="flex-1 bg-white">
@@ -208,6 +241,10 @@ export default function SearchScreen() {
             className="flex-1 ml-2 dark:text-slate-200 focus:outline-none"
             returnKeyType="search"
           />
+
+          <TouchableOpacity onPress={handleVoiceSearch} className="p-2 ml-2">
+            <MaterialIcons name="mic" size={20} color="#2563EB" />
+          </TouchableOpacity>
 
           {/* Cancel/clear — shown only while searching, as an X mark inside the bar */}
           {isExpanded && (

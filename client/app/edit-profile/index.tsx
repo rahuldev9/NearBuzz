@@ -146,15 +146,15 @@ export default function EditProfileScreen() {
                 className="w-32 h-32 rounded-full"
               />
             ) : (
-              <View className="w-32 h-32 rounded-full bg-blue-600 justify-center items-center">
-                <Text className="text-5xl dark:text-slate-200 font-bold">
+              <View className="w-32 h-32 rounded-full bg-blue-800 justify-center items-center">
+                <Text className="text-5xl dark:text-slate-200 text-white font-bold">
                   {user?.name?.charAt(0).toUpperCase()}
                 </Text>
               </View>
             )}
 
             <View className="absolute bottom-1 right-1 bg-blue-800 active:bg-blue-900 p-2 rounded-full border-2 border-white">
-              <MaterialIcons name="camera-alt" color="#2563eb" size={18} />
+              <MaterialIcons name="camera-alt" color="#fff" size={18} />
             </View>
           </TouchableOpacity>
 

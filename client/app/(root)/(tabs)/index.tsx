@@ -1,4 +1,6 @@
+import AssistantChatModal from "@/Components/AssistantChatModal";
 import { useAuth } from "@/context/AuthContext";
+import { getRecommendedEvents } from "@/services/aiService";
 import { getMyBookings, getMyEvents } from "@/services/eventService";
 import { MaterialIcons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
@@ -14,9 +16,15 @@ export default function HomeScreen() {
   const [bookingCount, setBookingCount] = useState(0);
   const [checkedInCount, setCheckedInCount] = useState(0);
   const [eventsCount, seteventsCount] = useState(0);
+  const [recommendedEvents, setRecommendedEvents] = useState<any[]>([]);
+  const [showAssistant, setShowAssistant] = useState(false);
   useEffect(() => {
     const loadData = async () => {
-      await Promise.all([loadBookings(), loadLatestEvent()]);
+      await Promise.all([
+        loadBookings(),
+        loadLatestEvent(),
+        loadRecommendations(),
+      ]);
     };
 
     loadData();
@@ -61,6 +69,19 @@ export default function HomeScreen() {
     } catch (error) {
       console.log(error);
     }
+  };
+
+  const loadRecommendations = async () => {
+    try {
+      const response = await getRecommendedEvents();
+      setRecommendedEvents(Array.isArray(response) ? response : []);
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  const openAssistant = () => {
+    setShowAssistant(true);
   };
   const handleBookingPress = (bookingId: string) => {
     router.push(`/booking-success/${bookingId}`);
@@ -164,6 +185,55 @@ export default function HomeScreen() {
             <MaterialIcons name="chevron-right" size={28} color="#999" />
           </TouchableOpacity>
         </View>
+
+        {recommendedEvents.length > 0 ? (
+          <View className="px-5 mt-8">
+            <View className="flex-row justify-between items-center mb-5">
+              <Text className="text-2xl font-bold dark:text-slate-200">
+                Recommended For You
+              </Text>
+            </View>
+            {recommendedEvents.map((event) => (
+              <TouchableOpacity
+                key={event.title + event.venueName}
+                activeOpacity={0.9}
+                onPress={() =>
+                  router.push({
+                    pathname: "/search",
+                  })
+                }
+                className="mb-4 rounded-3xl overflow-hidden bg-white dark:bg-neutral-800 shadow-lg"
+              >
+                <View className="p-5">
+                  <Text className="text-xl font-bold dark:text-slate-100">
+                    {event.title}
+                  </Text>
+                  <View className="self-start mt-2 bg-indigo-100 dark:bg-indigo-900 rounded-full px-3 py-1">
+                    <Text className="text-indigo-700 dark:text-indigo-300 text-xs font-semibold">
+                      {event.category}
+                    </Text>
+                  </View>
+                  <Text
+                    className="mt-3 text-slate-600 dark:text-slate-300 leading-6"
+                    numberOfLines={3}
+                  >
+                    {event.description}
+                  </Text>
+                  <View className="flex-row items-center mt-4">
+                    <MaterialIcons
+                      name="location-on"
+                      size={16}
+                      color="#64748B"
+                    />
+                    <Text className="ml-2 text-slate-700 dark:text-slate-200">
+                      {event.venueName || event.address || "Local venue"}
+                    </Text>
+                  </View>
+                </View>
+              </TouchableOpacity>
+            ))}
+          </View>
+        ) : null}
 
         {/* Activities */}
         <View className="px-5 mt-8">
@@ -347,6 +417,19 @@ export default function HomeScreen() {
           )}
         </View>
       </ScrollView>
+
+      <TouchableOpacity
+        onPress={openAssistant}
+        className="absolute bottom-6 right-5 rounded-full bg-indigo-600 p-4 shadow-xl"
+      >
+        <MaterialIcons name="smart-toy" size={28} color="white" />
+      </TouchableOpacity>
+
+      <AssistantChatModal
+        visible={showAssistant}
+        onClose={() => setShowAssistant(false)}
+        sessionId="home-assistant"
+      />
     </SafeAreaView>
   );
 }
