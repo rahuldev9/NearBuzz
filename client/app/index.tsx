@@ -51,7 +51,7 @@ export default function Index() {
         {/* Hero */}
         <View className="items-center rounded-b-[40px] px-6 pt-14 pb-10">
           <Image
-            source={require("../assets/images/logo.png")}
+            source={require("../assets/images/logo.webp")}
             style={{ width: 200, height: 200 }}
             resizeMode="contain"
           />
