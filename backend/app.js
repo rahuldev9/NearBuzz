@@ -4,6 +4,7 @@ import express from "express";
 import helmet from "helmet";
 import morgan from "morgan";
 
+import aiRoutes from "./src/routes/ai.routes.js";
 import authRoutes from "./src/routes/auth.routes.js";
 import bookingRoutes from "./src/routes/booking.routes.js";
 import eventRoutes from "./src/routes/event.routes.js";
@@ -35,6 +36,7 @@ app.use("/api/bookings", bookingRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/events", eventRoutes);
 app.use("/api/notifications", notificationRoutes);
+app.use("/api/ai", aiRoutes);
 
 app.get("/", (req, res) => {
   res.json({

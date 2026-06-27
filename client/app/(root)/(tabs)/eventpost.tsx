@@ -1,4 +1,5 @@
 import ConfirmDialog from "@/Components/ConfirmDialog";
+import { generateAiBanner, generateAiDescription } from "@/services/aiService";
 import {
   createEvent,
   deleteEvent,
@@ -60,6 +61,7 @@ export default function EventPostingScreen() {
   const [isEditing, setIsEditing] = useState(false);
   const [image, setImage] = useState("");
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
+  const [aiGenerating, setAiGenerating] = useState(false);
   useEffect(() => {
     loadEvents();
   }, []);
@@ -266,6 +268,62 @@ export default function EventPostingScreen() {
       setLoading(false);
     }
   };
+  const handleGenerateDescription = async () => {
+    if (!title.trim() || !category.trim() || !venue.trim()) {
+      toast.error("Add title, category, and venue first.");
+      return;
+    }
+
+    try {
+      setAiGenerating(true);
+      const generated = await generateAiDescription({
+        title,
+        category,
+        venue,
+        date,
+      });
+      setDescription(generated);
+      toast.success("Description generated.");
+    } catch (error) {
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Unable to generate description.",
+      );
+    } finally {
+      setAiGenerating(false);
+    }
+  };
+
+  const handleGenerateBanner = async () => {
+    if (!title.trim() || !category.trim() || !venue.trim()) {
+      toast.error("Add title, category, and venue first.");
+      return;
+    }
+
+    try {
+      setAiGenerating(true);
+      const result = await generateAiBanner({
+        title,
+        category,
+        venue,
+        date,
+      });
+      if (result?.imageUrl) {
+        setImage(result.imageUrl);
+        toast.success("Banner generated.");
+      } else {
+        toast.error("No banner image was generated.");
+      }
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Unable to generate banner.",
+      );
+    } finally {
+      setAiGenerating(false);
+    }
+  };
+
   const handleDeleteEvent = async () => {
     if (!selectedEventId) return;
 
@@ -343,9 +401,21 @@ export default function EventPostingScreen() {
           )} */}
 
           {/* Description */}
-          <Text className="font-semibold mt-5 mb-2 dark:text-slate-200">
-            Description
-          </Text>
+
+          <View className="flex-row items-center justify-between mb-2 pt-4">
+            <Text className="font-semibold dark:text-slate-200">
+              Description
+            </Text>
+            <TouchableOpacity
+              onPress={handleGenerateDescription}
+              disabled={aiGenerating}
+              className="rounded-full bg-indigo-600 px-3 py-2"
+            >
+              <Text className="text-white text-xs font-semibold">
+                {aiGenerating ? "Generating..." : "Generate with AI"}
+              </Text>
+            </TouchableOpacity>
+          </View>
           <TextInput
             multiline
             numberOfLines={4}
@@ -552,16 +622,27 @@ export default function EventPostingScreen() {
           <Text className="font-semibold mt-5 mb-2 dark:text-slate-200">
             Uplad Event Image
           </Text>
-          <TouchableOpacity
-            onPress={pickImage}
-            className="bg-blue-600 rounded-2xl py-3 px-5 flex-row items-center justify-center"
-          >
-            <MaterialIcons name="photo-library" size={20} color="#fff" />
-
-            <Text className="text-white font-semibold ml-2">
-              Select Event Image
-            </Text>
-          </TouchableOpacity>
+          <View className="flex-row gap-3 mt-2">
+            <TouchableOpacity
+              onPress={pickImage}
+              className="flex-1 bg-blue-600 rounded-2xl py-3 px-5 flex-row items-center justify-center"
+            >
+              <MaterialIcons name="photo-library" size={20} color="#fff" />
+              <Text className="text-white font-semibold ml-2">
+                Select Event Image
+              </Text>
+            </TouchableOpacity>
+            {/* <TouchableOpacity
+              onPress={handleGenerateBanner}
+              disabled={aiGenerating}
+              className="flex-1 bg-purple-600 rounded-2xl py-3 px-5 flex-row items-center justify-center"
+            >
+              <MaterialIcons name="auto-awesome" size={20} color="#fff" />
+              <Text className="text-white font-semibold ml-2">
+                Generate Banner
+              </Text>
+            </TouchableOpacity> */}
+          </View>
           {image ? (
             <Image
               source={{ uri: image }}
