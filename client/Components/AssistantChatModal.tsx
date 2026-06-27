@@ -6,8 +6,10 @@ import React, { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
+  Animated,
+  BackHandler,
+  Dimensions,
   KeyboardAvoidingView,
-  Modal,
   Platform,
   ScrollView,
   Text,
@@ -15,6 +17,11 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+
+const SCREEN_HEIGHT = Dimensions.get("window").height;
+const SHEET_HEIGHT = SCREEN_HEIGHT * 0.92;
+
 interface AssistantChatModalProps {
   visible: boolean;
   onClose: () => void;
@@ -96,6 +103,44 @@ export default function AssistantChatModal({
   const [historyLoading, setHistoryLoading] = useState(false);
   const scrollViewRef = useRef<ScrollView>(null);
   const { colorScheme } = useColorScheme();
+  const insets = useSafeAreaInsets();
+
+  // ---- Slide-up sheet animation (same pattern as EventBottomSheet) ----
+  const [mounted, setMounted] = useState(visible);
+  const translateY = useRef(new Animated.Value(SHEET_HEIGHT)).current;
+  const backdropOpacity = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    if (visible) {
+      setMounted(true);
+    }
+
+    Animated.spring(translateY, {
+      toValue: visible ? 0 : SHEET_HEIGHT,
+      useNativeDriver: true,
+      tension: 80,
+      friction: 11,
+    }).start(() => {
+      if (!visible) setMounted(false);
+    });
+
+    Animated.timing(backdropOpacity, {
+      toValue: visible ? 1 : 0,
+      duration: visible ? 200 : 180,
+      useNativeDriver: true,
+    }).start();
+  }, [visible]);
+
+  // Android hardware back button (replaces Modal's onRequestClose)
+  useEffect(() => {
+    if (!visible) return;
+    const sub = BackHandler.addEventListener("hardwareBackPress", () => {
+      onClose();
+      return true;
+    });
+    return () => sub.remove();
+  }, [visible, onClose]);
+
   useEffect(() => {
     if (!visible) return;
 
@@ -206,17 +251,46 @@ export default function AssistantChatModal({
   const isEmptyState = messages.length === 0 && !historyLoading;
   const canSend = input.trim().length > 0 && !loading;
 
+  if (!mounted) return null;
+
   return (
-    <Modal
-      visible={visible}
-      transparent
-      animationType="slide"
-      onRequestClose={onClose}
+    <View
+      style={{
+        position: "absolute",
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        zIndex: 999,
+      }}
     >
-      <View className="flex-1 justify-end bg-black/70">
+      {/* Backdrop */}
+      <Animated.View
+        style={{
+          position: "absolute",
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          opacity: backdropOpacity,
+        }}
+        className="bg-black/70"
+      />
+
+      {/* Sheet */}
+      <Animated.View
+        style={{
+          position: "absolute",
+          left: 0,
+          right: 0,
+          bottom: 0,
+          height: SHEET_HEIGHT,
+          transform: [{ translateY }],
+        }}
+      >
         <KeyboardAvoidingView
           behavior={Platform.OS === "ios" ? "padding" : undefined}
-          className="h-[90%] overflow-hidden rounded-t-[32px] dark:bg-neutral-900 bg-white"
+          className="flex-1 overflow-hidden rounded-t-[32px] dark:bg-neutral-900 bg-white"
         >
           {/* Drag handle */}
           <View className="items-center pb-1 pt-3">
@@ -338,7 +412,10 @@ export default function AssistantChatModal({
           )}
 
           {/* ---------- Input bar ---------- */}
-          <View className=" px-4 pb-6 pt-3 bg-white dark:bg-neutral-900">
+          <View
+            className="px-4 pt-3 bg-white dark:bg-neutral-900"
+            style={{ paddingBottom: insets.bottom + 12 }}
+          >
             <View className="flex-row items-end rounded-3xl bg-slate-100 dark:bg-neutral-900 border border-slate-200 dark:border-neutral-800 px-2 py-2">
               {/* Add Button */}
               <TouchableOpacity className="h-10 w-10 items-center justify-center rounded-full">
@@ -393,7 +470,7 @@ export default function AssistantChatModal({
             </View>
           </View>
         </KeyboardAvoidingView>
-      </View>
-    </Modal>
+      </Animated.View>
+    </View>
   );
 }
