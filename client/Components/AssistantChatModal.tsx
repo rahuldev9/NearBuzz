@@ -8,19 +8,16 @@ import {
   Alert,
   Animated,
   BackHandler,
-  Dimensions,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
   Text,
   TextInput,
   TouchableOpacity,
+  useWindowDimensions,
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-
-const SCREEN_HEIGHT = Dimensions.get("window").height;
-const SHEET_HEIGHT = SCREEN_HEIGHT * 0.92;
 
 interface AssistantChatModalProps {
   visible: boolean;
@@ -105,7 +102,12 @@ export default function AssistantChatModal({
   const { colorScheme } = useColorScheme();
   const insets = useSafeAreaInsets();
 
-  // ---- Slide-up sheet animation (same pattern as EventBottomSheet) ----
+  // Live viewport size — avoids stale dimensions on web/hosted builds
+  // where Dimensions.get('window') read at module-load time can be wrong.
+  const { height: SCREEN_HEIGHT } = useWindowDimensions();
+  const SHEET_HEIGHT = SCREEN_HEIGHT * 0.92;
+
+  // ---- Slide-up sheet animation ----
   const [mounted, setMounted] = useState(visible);
   const translateY = useRef(new Animated.Value(SHEET_HEIGHT)).current;
   const backdropOpacity = useRef(new Animated.Value(0)).current;
@@ -129,7 +131,7 @@ export default function AssistantChatModal({
       duration: visible ? 200 : 180,
       useNativeDriver: true,
     }).start();
-  }, [visible]);
+  }, [visible, SHEET_HEIGHT]);
 
   // Android hardware back button (replaces Modal's onRequestClose)
   useEffect(() => {
@@ -307,7 +309,12 @@ export default function AssistantChatModal({
 
           {isEmptyState ? (
             // ---------- Empty / greeting state ----------
-            <ScrollView>
+            <ScrollView
+              className="flex-1"
+              contentContainerStyle={{ flexGrow: 1 }}
+            >
+              {/* Centered greeting block — its own flex-1 region so it
+                  doesn't shrink-wrap the suggestions row below it */}
               <View className="flex-1 items-center justify-center px-6 pt-2">
                 <LinearGradient
                   colors={["#3b82f6", "#1d4ed8", "#1e3a8a"]}
@@ -331,26 +338,32 @@ export default function AssistantChatModal({
                 <Text className="mt-1 text-[28px] font-bold dark:text-slate-200">
                   How can I help?
                 </Text>
+              </View>
 
-                <View className="mt-9 w-full flex-row flex-wrap justify-center gap-2.5">
-                  {SUGGESTIONS.map((item) => (
-                    <TouchableOpacity
-                      key={item.label}
-                      onPress={() => handleSuggestion(item.label)}
-                      activeOpacity={0.7}
-                      className="flex-row items-center gap-1.5 rounded-full border bg-blue-900 border-neutral-700/80 dark:bg-neutral-900 px-4 py-2.5"
-                    >
-                      <Text className="text-sm font-medium text-white dark:text-slate-200">
-                        {item.label}
-                      </Text>
-                      <MaterialIcons
-                        name="arrow-forward"
-                        size={14}
-                        color="#fff"
-                      />
-                    </TouchableOpacity>
-                  ))}
-                </View>
+              {/* Suggestions — full-width sibling, NOT nested inside an
+                  items-center parent, so w-full actually resolves to the
+                  real screen width and flex-wrap can wrap onto new lines */}
+              <View
+                style={{ width: "100%" }}
+                className="flex-row flex-wrap justify-center gap-2.5 px-6 pb-6"
+              >
+                {SUGGESTIONS.map((item) => (
+                  <TouchableOpacity
+                    key={item.label}
+                    onPress={() => handleSuggestion(item.label)}
+                    activeOpacity={0.7}
+                    className="flex-row items-center gap-1.5 rounded-full border bg-blue-900 border-neutral-700/80 dark:bg-neutral-900 px-4 py-2.5"
+                  >
+                    <Text className="text-sm font-medium text-white dark:text-slate-200">
+                      {item.label}
+                    </Text>
+                    <MaterialIcons
+                      name="arrow-forward"
+                      size={14}
+                      color="#fff"
+                    />
+                  </TouchableOpacity>
+                ))}
               </View>
             </ScrollView>
           ) : (
