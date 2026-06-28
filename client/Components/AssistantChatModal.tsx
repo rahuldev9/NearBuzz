@@ -6,19 +6,15 @@ import React, { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
-  Animated,
-  BackHandler,
   KeyboardAvoidingView,
+  Modal,
   Platform,
   ScrollView,
   Text,
   TextInput,
   TouchableOpacity,
-  useWindowDimensions,
   View,
 } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
-
 interface AssistantChatModalProps {
   visible: boolean;
   onClose: () => void;
@@ -100,49 +96,6 @@ export default function AssistantChatModal({
   const [historyLoading, setHistoryLoading] = useState(false);
   const scrollViewRef = useRef<ScrollView>(null);
   const { colorScheme } = useColorScheme();
-  const insets = useSafeAreaInsets();
-
-  // Live viewport size — avoids stale dimensions on web/hosted builds
-  // where Dimensions.get('window') read at module-load time can be wrong.
-  const { height: SCREEN_HEIGHT } = useWindowDimensions();
-  const SHEET_HEIGHT = SCREEN_HEIGHT * 0.92;
-
-  // ---- Slide-up sheet animation ----
-  const [mounted, setMounted] = useState(visible);
-  const translateY = useRef(new Animated.Value(SHEET_HEIGHT)).current;
-  const backdropOpacity = useRef(new Animated.Value(0)).current;
-
-  useEffect(() => {
-    if (visible) {
-      setMounted(true);
-    }
-
-    Animated.spring(translateY, {
-      toValue: visible ? 0 : SHEET_HEIGHT,
-      useNativeDriver: true,
-      tension: 80,
-      friction: 11,
-    }).start(() => {
-      if (!visible) setMounted(false);
-    });
-
-    Animated.timing(backdropOpacity, {
-      toValue: visible ? 1 : 0,
-      duration: visible ? 200 : 180,
-      useNativeDriver: true,
-    }).start();
-  }, [visible, SHEET_HEIGHT]);
-
-  // Android hardware back button (replaces Modal's onRequestClose)
-  useEffect(() => {
-    if (!visible) return;
-    const sub = BackHandler.addEventListener("hardwareBackPress", () => {
-      onClose();
-      return true;
-    });
-    return () => sub.remove();
-  }, [visible, onClose]);
-
   useEffect(() => {
     if (!visible) return;
 
@@ -253,46 +206,17 @@ export default function AssistantChatModal({
   const isEmptyState = messages.length === 0 && !historyLoading;
   const canSend = input.trim().length > 0 && !loading;
 
-  if (!mounted) return null;
-
   return (
-    <View
-      style={{
-        position: "absolute",
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        zIndex: 999,
-      }}
+    <Modal
+      visible={visible}
+      transparent
+      animationType="slide"
+      onRequestClose={onClose}
     >
-      {/* Backdrop */}
-      <Animated.View
-        style={{
-          position: "absolute",
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          opacity: backdropOpacity,
-        }}
-        className="bg-black/70"
-      />
-
-      {/* Sheet */}
-      <Animated.View
-        style={{
-          position: "absolute",
-          left: 0,
-          right: 0,
-          bottom: 0,
-          height: SHEET_HEIGHT,
-          transform: [{ translateY }],
-        }}
-      >
+      <View className="flex-1 justify-end bg-black/70">
         <KeyboardAvoidingView
           behavior={Platform.OS === "ios" ? "padding" : undefined}
-          className="flex-1 overflow-hidden rounded-t-[32px] dark:bg-neutral-900 bg-white"
+          className="h-[90%] overflow-hidden rounded-t-[32px] dark:bg-neutral-900 bg-white"
         >
           {/* Drag handle */}
           <View className="items-center pb-1 pt-3">
@@ -309,12 +233,7 @@ export default function AssistantChatModal({
 
           {isEmptyState ? (
             // ---------- Empty / greeting state ----------
-            <ScrollView
-              className="flex-1"
-              contentContainerStyle={{ flexGrow: 1 }}
-            >
-              {/* Centered greeting block — its own flex-1 region so it
-                  doesn't shrink-wrap the suggestions row below it */}
+            <ScrollView>
               <View className="flex-1 items-center justify-center px-6 pt-2">
                 <LinearGradient
                   colors={["#3b82f6", "#1d4ed8", "#1e3a8a"]}
@@ -338,32 +257,26 @@ export default function AssistantChatModal({
                 <Text className="mt-1 text-[28px] font-bold dark:text-slate-200">
                   How can I help?
                 </Text>
-              </View>
 
-              {/* Suggestions — full-width sibling, NOT nested inside an
-                  items-center parent, so w-full actually resolves to the
-                  real screen width and flex-wrap can wrap onto new lines */}
-              <View
-                style={{ width: "100%" }}
-                className="flex-row flex-wrap justify-center gap-2.5 px-6 pb-6"
-              >
-                {SUGGESTIONS.map((item) => (
-                  <TouchableOpacity
-                    key={item.label}
-                    onPress={() => handleSuggestion(item.label)}
-                    activeOpacity={0.7}
-                    className="flex-row items-center gap-1.5 rounded-full border bg-blue-900 border-neutral-700/80 dark:bg-neutral-900 px-4 py-2.5"
-                  >
-                    <Text className="text-sm font-medium text-white dark:text-slate-200">
-                      {item.label}
-                    </Text>
-                    <MaterialIcons
-                      name="arrow-forward"
-                      size={14}
-                      color="#fff"
-                    />
-                  </TouchableOpacity>
-                ))}
+                <View className="mt-9 w-full flex-row flex-wrap justify-center gap-2.5">
+                  {SUGGESTIONS.map((item) => (
+                    <TouchableOpacity
+                      key={item.label}
+                      onPress={() => handleSuggestion(item.label)}
+                      activeOpacity={0.7}
+                      className="flex-row items-center gap-1.5 rounded-full border bg-blue-900 border-neutral-700/80 dark:bg-neutral-900 px-4 py-2.5"
+                    >
+                      <Text className="text-sm font-medium text-white dark:text-slate-200">
+                        {item.label}
+                      </Text>
+                      <MaterialIcons
+                        name="arrow-forward"
+                        size={14}
+                        color="#fff"
+                      />
+                    </TouchableOpacity>
+                  ))}
+                </View>
               </View>
             </ScrollView>
           ) : (
@@ -425,10 +338,7 @@ export default function AssistantChatModal({
           )}
 
           {/* ---------- Input bar ---------- */}
-          <View
-            className="px-4 pt-3 bg-white dark:bg-neutral-900"
-            style={{ paddingBottom: insets.bottom + 12 }}
-          >
+          <View className=" px-4 pb-6 pt-3 bg-white dark:bg-neutral-900">
             <View className="flex-row items-end rounded-3xl bg-slate-100 dark:bg-neutral-900 border border-slate-200 dark:border-neutral-800 px-2 py-2">
               {/* Add Button */}
               <TouchableOpacity className="h-10 w-10 items-center justify-center rounded-full">
@@ -483,7 +393,7 @@ export default function AssistantChatModal({
             </View>
           </View>
         </KeyboardAvoidingView>
-      </Animated.View>
-    </View>
+      </View>
+    </Modal>
   );
 }
