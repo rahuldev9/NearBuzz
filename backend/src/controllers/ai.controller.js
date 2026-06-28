@@ -1,9 +1,13 @@
 import {
   chatWithAssistant,
+  createChatSession,
+  deleteChatSession,
   generateEventBannerPrompt,
   generateEventDescription,
   getChatHistory,
+  listChatSessions,
   recommendEventsForUser,
+  renameChatSession,
   searchEventsWithAi,
 } from "../services/ai.service.js";
 
@@ -120,6 +124,80 @@ export const getAiChatHistory = async (req, res) => {
     res.json({
       success: true,
       data: history,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+export const getAiChatSessions = async (req, res) => {
+  try {
+    const sessions = await listChatSessions({ userId: req.user.id });
+
+    res.json({
+      success: true,
+      data: sessions,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+export const createAiChatSession = async (req, res) => {
+  try {
+    const session = await createChatSession({
+      userId: req.user.id,
+      title: req.body?.title || "New chat",
+    });
+
+    res.status(201).json({
+      success: true,
+      data: session,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+export const updateAiChatSession = async (req, res) => {
+  try {
+    const session = await renameChatSession({
+      userId: req.user.id,
+      sessionId: req.params.sessionId,
+      title: req.body?.title || "New chat",
+    });
+
+    res.json({
+      success: true,
+      data: session,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+export const removeAiChatSession = async (req, res) => {
+  try {
+    const session = await deleteChatSession({
+      userId: req.user.id,
+      sessionId: req.params.sessionId,
+    });
+
+    res.json({
+      success: true,
+      data: session,
     });
   } catch (error) {
     res.status(500).json({
