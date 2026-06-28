@@ -81,14 +81,14 @@ export default function EventBottomSheet({
     const isSelected = selectedEvent?._id === item._id;
 
     const statusColors = {
-      Scheduled: " text-white",
-      Live: "text-white",
-      Closed: "text-white",
+      Scheduled: " dark:text-white",
+      Live: "dark:text-white",
+      Closed: "dark:text-white",
     };
 
     const statusClass =
       statusColors[item.status as keyof typeof statusColors] ??
-      "dark:bg-slate-100 text-slate-700";
+      "dark:bg-slate-100 dark:text-slate-200";
 
     return (
       <TouchableOpacity
@@ -139,7 +139,7 @@ export default function EventBottomSheet({
               </Text>
             </View>
 
-            <View className="bg-blue-100 dark:bg-blue-900 rounded-full px-2.5 py-1">
+            <View className="bg-blue-100 text-b dark:bg-blue-900 rounded-full px-2.5 py-1">
               <Text className={`text-[11px] font-semibold ${statusClass}`}>
                 {item.status}
               </Text>
