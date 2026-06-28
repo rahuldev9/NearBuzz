@@ -81,6 +81,56 @@ export const chatWithAi = async (payload: {
   return data?.data || "";
 };
 
+export interface AiChatSession {
+  sessionId: string;
+  title: string;
+  lastMessage?: string;
+  messageCount?: number;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export const getAiChatSessions = async (): Promise<AiChatSession[]> => {
+  const response = await authFetch(`${AI_API_URL}/chat/sessions`);
+  const data = await parseResponse(response);
+  return data?.data || [];
+};
+
+export const createAiChatSession = async (title = "New chat") => {
+  const response = await authFetch(`${AI_API_URL}/chat/sessions`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ title }),
+  });
+  const data = await parseResponse(response);
+  return data?.data;
+};
+
+export const renameAiChatSession = async (
+  sessionId: string,
+  title: string,
+) => {
+  const response = await authFetch(
+    `${AI_API_URL}/chat/sessions/${encodeURIComponent(sessionId)}`,
+    {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ title }),
+    },
+  );
+  const data = await parseResponse(response);
+  return data?.data;
+};
+
+export const deleteAiChatSession = async (sessionId: string) => {
+  const response = await authFetch(
+    `${AI_API_URL}/chat/sessions/${encodeURIComponent(sessionId)}`,
+    { method: "DELETE" },
+  );
+  const data = await parseResponse(response);
+  return data?.data;
+};
+
 export const getAiChatHistory = async (sessionId = "default") => {
   const response = await authFetch(
     `${AI_API_URL}/chat/history?sessionId=${encodeURIComponent(sessionId)}`,

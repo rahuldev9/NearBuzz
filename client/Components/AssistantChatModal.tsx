@@ -1,4 +1,11 @@
-import { chatWithAi, getAiChatHistory } from "@/services/aiService";
+import {
+  AiChatSession,
+  chatWithAi,
+  createAiChatSession,
+  deleteAiChatSession,
+  getAiChatHistory,
+  getAiChatSessions,
+} from "@/services/aiService";
 import { MaterialIcons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useColorScheme } from "nativewind";
@@ -35,8 +42,7 @@ const SUGGESTIONS: {
   { label: "Find events near me", icon: "explore" },
   { label: "Show my bookings", icon: "event-available" },
   { label: "How do I scan a QR code?", icon: "qr-code-scanner" },
-  { label: "Plan my weekend", icon: "calendar-today" },
-  { label: "What's popular this week", icon: "trending-up" },
+
   { label: "More", icon: "more-horiz" },
 ];
 
@@ -91,18 +97,43 @@ export default function AssistantChatModal({
   userName = "there",
 }: AssistantChatModalProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [sessions, setSessions] = useState<AiChatSession[]>([]);
+  const [activeSessionId, setActiveSessionId] = useState(sessionId);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [historyLoading, setHistoryLoading] = useState(false);
+  const [sessionsLoading, setSessionsLoading] = useState(false);
+  const [deleteLoading, setDeleteLoading] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<AiChatSession | null>(null);
   const scrollViewRef = useRef<ScrollView>(null);
   const { colorScheme } = useColorScheme();
+
+  const refreshSessions = async () => {
+    setSessionsLoading(true);
+    try {
+      const nextSessions = await getAiChatSessions();
+      setSessions(nextSessions);
+    } catch (error) {
+      console.log(error);
+    } finally {
+      setSessionsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (!visible) return;
+    setActiveSessionId(sessionId);
+    refreshSessions();
+  }, [sessionId, visible]);
+
   useEffect(() => {
     if (!visible) return;
 
     const loadHistory = async () => {
       setHistoryLoading(true);
       try {
-        const history = await getAiChatHistory(sessionId);
+        const history = await getAiChatHistory(activeSessionId);
         const normalized: ChatMessage[] = Array.isArray(history)
           ? history.map((item: any) => ({
               role: item.role === "user" ? "user" : "assistant",
@@ -118,7 +149,7 @@ export default function AssistantChatModal({
     };
 
     loadHistory();
-  }, [sessionId, visible]);
+  }, [activeSessionId, visible]);
 
   useEffect(() => {
     if (!visible) return;
@@ -139,7 +170,7 @@ export default function AssistantChatModal({
     try {
       const reply = await chatWithAi({
         message,
-        sessionId,
+        sessionId: activeSessionId,
         context: { page: "home" },
       });
 
@@ -150,6 +181,7 @@ export default function AssistantChatModal({
           content: reply || "I'm here and ready to help.",
         },
       ]);
+      refreshSessions();
     } catch (error) {
       setMessages((prev) => [
         ...prev,
@@ -165,6 +197,66 @@ export default function AssistantChatModal({
   };
 
   const handleSend = () => sendMessage(input);
+
+  const handleNewChat = async () => {
+    setLoading(false);
+    setInput("");
+    setMessages([]);
+    setSidebarOpen(false);
+
+    try {
+      const session = await createAiChatSession();
+      if (session?.sessionId) {
+        setActiveSessionId(session.sessionId);
+        setSessions((prev) => [session, ...prev]);
+      } else {
+        setActiveSessionId(`local-${Date.now()}`);
+      }
+    } catch (error) {
+      const fallbackSessionId = `local-${Date.now()}`;
+      setActiveSessionId(fallbackSessionId);
+    }
+  };
+
+  const handleSelectSession = (nextSessionId: string) => {
+    setActiveSessionId(nextSessionId);
+    setSidebarOpen(false);
+  };
+
+  const requestDeleteSession = (targetSession: AiChatSession) => {
+    setDeleteTarget(targetSession);
+  };
+
+  const cancelDeleteSession = () => {
+    if (deleteLoading) return;
+    setDeleteTarget(null);
+  };
+
+  const confirmDeleteSession = async () => {
+    if (!deleteTarget) return;
+
+    const targetSessionId = deleteTarget.sessionId;
+    setDeleteLoading(true);
+
+    try {
+      await deleteAiChatSession(targetSessionId);
+
+      const nextSessions = sessions.filter(
+        (item) => item.sessionId !== targetSessionId,
+      );
+      setSessions(nextSessions);
+      setDeleteTarget(null);
+
+      if (targetSessionId === activeSessionId) {
+        setMessages([]);
+        setActiveSessionId(nextSessions[0]?.sessionId || sessionId);
+      }
+    } catch (error) {
+      Alert.alert("Chat", "Unable to delete this chat right now.");
+    } finally {
+      setDeleteLoading(false);
+    }
+  };
 
   const handleSuggestion = (label: string) => {
     if (label === "More") return; // hook up a sheet of extra actions here if needed
@@ -205,6 +297,10 @@ export default function AssistantChatModal({
 
   const isEmptyState = messages.length === 0 && !historyLoading;
   const canSend = input.trim().length > 0 && !loading;
+  const activeSession = sessions.find(
+    (item) => item.sessionId === activeSessionId,
+  );
+  const activeTitle = activeSession?.title || "New chat";
 
   return (
     <Modal
@@ -223,13 +319,189 @@ export default function AssistantChatModal({
             <View className="h-1.5 w-10 rounded-full bg-blue-100 dark:bg-neutral-800" />
           </View>
 
-          {/* Close button */}
-          <TouchableOpacity
-            onPress={onClose}
-            className="absolute right-4 top-4 z-10 rounded-full bg-blue-100 dark:bg-neutral-700 p-2 "
-          >
-            <MaterialIcons name="close" size={18} color=" #1e3a8a" />
-          </TouchableOpacity>
+          <View className="flex-row items-center border-b border-slate-100 px-4 pb-3 pt-2 dark:border-neutral-800">
+            <TouchableOpacity
+              onPress={() => setSidebarOpen(true)}
+              className="h-10 w-10 items-center justify-center rounded-full bg-blue-50 dark:bg-neutral-800"
+            >
+              <MaterialIcons
+                name="menu"
+                size={22}
+                color={colorScheme === "dark" ? "#E5E7EB" : "#1E3A8A"}
+              />
+            </TouchableOpacity>
+
+            <View className="mx-3 flex-1">
+              <Text
+                numberOfLines={1}
+                className="text-base font-semibold text-slate-900 dark:text-slate-100"
+              >
+                {activeTitle}
+              </Text>
+              <Text className="text-xs text-slate-500 dark:text-neutral-400">
+                NearBuzz AI
+              </Text>
+            </View>
+
+            <TouchableOpacity
+              onPress={handleNewChat}
+              className="mr-2 h-10 w-10 items-center justify-center rounded-full bg-blue-600"
+            >
+              <MaterialIcons name="add" size={22} color="#FFFFFF" />
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              onPress={onClose}
+              className="h-10 w-10 items-center justify-center rounded-full bg-blue-50 dark:bg-neutral-800"
+            >
+              <MaterialIcons
+                name="close"
+                size={20}
+                color={colorScheme === "dark" ? "#E5E7EB" : "#1E3A8A"}
+              />
+            </TouchableOpacity>
+          </View>
+
+          {sidebarOpen ? (
+            <View className="absolute inset-0 z-20 flex-row">
+              <View className="h-full w-[82%] max-w-[320px] bg-white px-4 pb-5 pt-5 shadow-2xl dark:bg-neutral-950">
+                <View className="mb-4 flex-row items-center">
+                  <Text className="flex-1 text-lg font-bold text-slate-950 dark:text-white">
+                    Chats
+                  </Text>
+                  <TouchableOpacity
+                    onPress={() => setSidebarOpen(false)}
+                    className="h-9 w-9 items-center justify-center rounded-full bg-slate-100 dark:bg-neutral-800"
+                  >
+                    <MaterialIcons
+                      name="chevron-left"
+                      size={24}
+                      color={colorScheme === "dark" ? "#E5E7EB" : "#334155"}
+                    />
+                  </TouchableOpacity>
+                </View>
+
+                <TouchableOpacity
+                  onPress={handleNewChat}
+                  className="mb-4 flex-row items-center justify-center rounded-2xl bg-blue-600 px-4 py-3"
+                >
+                  <MaterialIcons name="add" size={20} color="#FFFFFF" />
+                  <Text className="ml-2 font-semibold text-white">
+                    New chat
+                  </Text>
+                </TouchableOpacity>
+
+                {sessionsLoading ? (
+                  <View className="items-center py-5">
+                    <ActivityIndicator size="small" color="#2563EB" />
+                  </View>
+                ) : (
+                  <ScrollView
+                    className="flex-1"
+                    contentContainerStyle={{ paddingBottom: 12 }}
+                  >
+                    {sessions.map((item) => {
+                      const selected = item.sessionId === activeSessionId;
+                      return (
+                        <TouchableOpacity
+                          key={item.sessionId}
+                          onPress={() => handleSelectSession(item.sessionId)}
+                          activeOpacity={0.75}
+                          className={`mb-2 flex-row items-center rounded-2xl border px-3 py-3 ${
+                            selected
+                              ? "border-blue-200 bg-blue-50 dark:border-blue-900 dark:bg-blue-950/40"
+                              : "border-slate-100 bg-slate-50 dark:border-neutral-800 dark:bg-neutral-900"
+                          }`}
+                        >
+                          <View className="mr-3 h-9 w-9 items-center justify-center rounded-full bg-white dark:bg-neutral-800">
+                            <MaterialIcons
+                              name="chat-bubble-outline"
+                              size={18}
+                              color={selected ? "#2563EB" : "#64748B"}
+                            />
+                          </View>
+                          <View className="flex-1">
+                            <Text
+                              numberOfLines={1}
+                              className="font-semibold text-slate-900 dark:text-slate-100"
+                            >
+                              {item.title || "New chat"}
+                            </Text>
+                            <Text
+                              numberOfLines={1}
+                              className="mt-0.5 text-xs text-slate-500 dark:text-neutral-400"
+                            >
+                              {item.lastMessage || "Ready when you are"}
+                            </Text>
+                          </View>
+                          <TouchableOpacity
+                            onPress={(event) => {
+                              event.stopPropagation();
+                              requestDeleteSession(item);
+                            }}
+                            className="ml-2 h-9 w-9 items-center justify-center rounded-full"
+                          >
+                            <MaterialIcons
+                              name="delete-outline"
+                              size={20}
+                              color={
+                                colorScheme === "dark" ? "#A3A3A3" : "#64748B"
+                              }
+                            />
+                          </TouchableOpacity>
+                        </TouchableOpacity>
+                      );
+                    })}
+                  </ScrollView>
+                )}
+              </View>
+
+              <TouchableOpacity
+                activeOpacity={1}
+                onPress={() => setSidebarOpen(false)}
+                className="flex-1 bg-black/40"
+              />
+            </View>
+          ) : null}
+
+          {deleteTarget ? (
+            <View className="absolute inset-0 z-30 items-center justify-center bg-black/55 px-6">
+              <View className="w-full max-w-[360px] rounded-3xl bg-white p-5 shadow-2xl dark:bg-neutral-900">
+                <Text className="text-xl font-bold text-slate-950 dark:text-white">
+                  Delete chat?
+                </Text>
+                <Text className="mt-2 text-sm leading-5 text-slate-600 dark:text-neutral-300">
+                  This will permanently delete "
+                  {deleteTarget.title || "New chat"}" and all messages in this
+                  chat.
+                </Text>
+
+                <View className="mt-5 flex-row justify-end gap-3">
+                  <TouchableOpacity
+                    onPress={cancelDeleteSession}
+                    disabled={deleteLoading}
+                    className="rounded-2xl bg-slate-100 px-5 py-3 dark:bg-neutral-800"
+                  >
+                    <Text className="font-semibold text-slate-700 dark:text-neutral-100">
+                      Cancel
+                    </Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    onPress={confirmDeleteSession}
+                    disabled={deleteLoading}
+                    className="min-w-[96px] items-center rounded-2xl bg-red-600 px-5 py-3"
+                  >
+                    {deleteLoading ? (
+                      <ActivityIndicator size="small" color="#FFFFFF" />
+                    ) : (
+                      <Text className="font-semibold text-white">Delete</Text>
+                    )}
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </View>
+          ) : null}
 
           {isEmptyState ? (
             // ---------- Empty / greeting state ----------
