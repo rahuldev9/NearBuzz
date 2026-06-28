@@ -55,7 +55,7 @@ NearBuzz is a modern event discovery and booking mobile application built with *
 ## Clone the Repository
 
 ```bash
-git clone [https://github.com/your-username/nearbuzz.git](https://github.com/rahuldev9/NearBuzz)
+git clone https://github.com/rahuldev9/NearBuzz
 ```
 
 ```bash
@@ -94,7 +94,7 @@ npm run dev
 
 **Your Name**
 
-GitHub: [https://github.com/rahuldev9](https://github.com/rahuldev9)
+GitHub: https://github.com/rahuldev9
 
 ---
 
