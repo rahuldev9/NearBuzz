@@ -13,7 +13,7 @@ export default function EmptyNotification({ onRefresh }: Props) {
         <MaterialIcons name="notifications-none" size={56} color="#2563eb" />
       </View>
 
-      <Text className="text-2xl font-bold text-slate-900 mt-8">
+      <Text className="text-2xl font-bold dark:text-slate-200 mt-8">
         No Notifications
       </Text>
 
